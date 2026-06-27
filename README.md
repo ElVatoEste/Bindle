@@ -36,39 +36,108 @@ state      =  versioned DB migrations
 manifest   =  bindle.json
 ```
 
-## Core ideas
-
-| Idea | What it means |
-|------|---------------|
-| 🧩 **Declare, don't wire** | A `bindle.json` lists what a module exports and depends on. No hand-edited binding dirs. |
-| 🔏 **Signature-aware** | ILE bindings break when a `*SRVPGM` signature changes. Bindle tracks signatures, not just version strings. |
-| 📌 **Reproducible** | A lock file pins exact versions **and** signatures. Same inputs, same objects. |
-| 🗄️ **State included** | Modules ship versioned DB migrations; install/upgrade applies them in order. |
-| 🔗 **Runtime wiring** | Bindle assembles the binding directory at build time and the library list at runtime. |
-
-## Planned CLI
+## Quickstart
 
 ```bash
-bindle init                 # scaffold a new module / project (bindle.json)
-bindle add <module>[@ver]   # add a dependency
-bindle install              # resolve + fetch + restore objects + run migrations + wire *LIBL
-bindle build                # compile module objects in dependency order
-bindle publish              # package (SAVF) + push to registry
-bindle list | list tree     # inspect the resolved dependency graph
+# 1. scaffold a project (creates bindle.json)
+bindle init
+
+# 2. add a dependency from the registry
+bindle add modfact@^2.3.0
+
+# 3. resolve + fetch + restore objects + run migrations + wire *LIBL
+bindle install
+
+# 4. build your own module's objects (in dependency order)
+bindle build
+
+# 5. publish your module so others can install it
+bindle publish
 ```
 
-## Architecture (at a glance)
+That's the whole loop: **init → add → install → build → publish.** No hand-edited binding directories, no manual `RSTLIB`, no remembering which DDL to run.
+
+## A module in one file — `bindle.json`
+
+```jsonc
+{
+  "schema": "bindle/v0",
+  "name": "modfact",
+  "version": "2.3.0",
+  "library": "MODFACT",                 // 1 module = 1 library (*LIB)
+
+  "exports": {
+    "srvpgm": "FACTSRV",                // public service program
+    "binder": "binder/FACTSRV.bnd",     // binder language = defines the signature
+    "copy":   "FACTPR"                  // /copy member = the public API "header"
+  },
+
+  "dependencies": {
+    "modbase": ">=1.0.0 <2.0.0",
+    "modimp":  "^1.2.0"
+  },
+
+  "build":      { "engine": "bob", "src": "src/", "objects": ["FACTMOD", "FACTSRV"] },
+  "migrations": { "dir": "migrations/", "schema": "MODFACT" },
+  "runtime":    { "libraryList": ["MODFACT", "MODBASE", "MODIMP"] }
+}
+```
+
+Full spec: [`docs/MANIFEST_SPEC.md`](docs/MANIFEST_SPEC.md) · Package layout: [`docs/PACKAGE_ANATOMY.md`](docs/PACKAGE_ANATOMY.md)
+
+## How `install` works
 
 ```text
-        ┌──────────────── bindle CLI (Go, single binary) ────────────────┐
-        │   manifest → resolver → registry → builder → installer → transport │
-        └───────────────────────────────┬─────────────────────────────────┘
-                              SSH (CL/SAVF) + ODBC (SQL)
-                                          ▼
-        ┌──────────────────────────── IBM i host ───────────────────────────┐
-        │   *LIB  *SRVPGM  *MODULE  *BNDDIR  Db2 tables  *LIBL  journals       │
-        └────────────────────────────────────────────────────────────────────┘
+bindle install
+  │
+  ├─ read   bindle.json + bindle.lock
+  ├─ resolve dependency graph        (versions + ILE signatures)
+  ├─ fetch   artifacts from registry (SAVF + metadata, verified by hash)
+  ├─ restore objects to IBM i        (SAVF → RSTLIB / RSTOBJ)
+  ├─ migrate DB schema               (run module migrations, in order)
+  └─ wire    *BNDDIR + library list  (compile-time + runtime resolution)
+        │
+        ▼
+  ✓ module API callable from your program
 ```
+
+> Internal component view (manifest · resolver · registry · builder · installer · transport) lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Registry
+
+Modules are published to a **registry** — an index of versioned artifacts (SAVF + metadata) that `install` reads from.
+
+```text
+publish:  bindle build → package SAVF → push artifact + metadata → registry
+store:    registry/<name>/<version>/{ MODFACT.savf, bindle.json, index.json }
+consume:  bindle add → resolve → fetch from registry → install
+```
+
+MVP backend is pluggable (IFS directory / SAVF host / S3-compatible bucket). Details: [`docs/REGISTRY.md`](docs/REGISTRY.md).
+
+## Where Bindle fits
+
+Each tool solves a different slice. Bindle fills the **native-ILE package management** gap.
+
+| Tool | Scope | Native ILE objects | Dep resolution | Registry / publish | DB migrations |
+|------|-------|:------------------:|:--------------:|:------------------:|:-------------:|
+| **yum / RPM** | PASE / open-source pkgs | ❌ | ✅ (PASE only) | ✅ | ❌ |
+| **Git** | Source version control | ❌ (source, not objects) | ❌ | ❌ | ❌ |
+| **ACS** | GUI client (5250, DB, transfer) | ❌ | ❌ | ❌ | ❌ |
+| **Bob (ibmi-bob)** | Build / compile | ✅ (build) | ⚠️ compile-time only | ❌ | ❌ |
+| **ARCAD / Merlin** | Full ALM (commercial, heavy) | ✅ | ✅ | ✅ | ⚠️ partial |
+| **Bindle** | **ILE package management** | ✅ | ✅ (version + signature) | ✅ | ✅ |
+
+Bindle is **complementary**: it can wrap Bob for builds and lives alongside Git for source.
+
+## Built to coexist (adoption-first)
+
+The hard part of a tool like this is not the code — it's **adoption in conservative IBM i shops**. Bindle is designed to slot into existing processes, not replace them:
+
+- **No big-bang rewrite.** Adopt one module at a time; the rest of the system keeps building the traditional way.
+- **Coexists with CL / existing change management.** Bindle generates standard objects (`*SRVPGM`, `*BNDDIR`, SAVF) and CL you can inspect and run yourself.
+- **Wraps, doesn't fight, the toolchain.** Uses Bob for builds, Git for source, standard `RSTLIB`/library lists for deploy.
+- **Reversible.** Everything Bindle produces is a normal IBM i object — you are never locked in.
 
 ## Project layout
 
@@ -81,7 +150,7 @@ internal/
   builder/             compile in dep order, *BNDDIR, signature, SAVF
   installer/           resolve→fetch→restore→migrate→wire *LIBL/*BNDDIR
   transport/           SSH (CL/SAVF) + ODBC (SQL) to the host
-docs/                  VISION · ARCHITECTURE · MANIFEST_SPEC · ROADMAP
+docs/                  VISION · ARCHITECTURE · MANIFEST_SPEC · PACKAGE_ANATOMY · REGISTRY · ROADMAP
 assets/                logo & banner
 ```
 
@@ -92,7 +161,9 @@ assets/                logo & banner
 - [`docs/VISION.md`](docs/VISION.md) — the problem and the bet
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components & data model
 - [`docs/MANIFEST_SPEC.md`](docs/MANIFEST_SPEC.md) — the `bindle.json` format
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — phases & open decisions
+- [`docs/PACKAGE_ANATOMY.md`](docs/PACKAGE_ANATOMY.md) — what's inside a package
+- [`docs/REGISTRY.md`](docs/REGISTRY.md) — publish · store · consume
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) — MVP → v1.0 → v2.0
 
 ## Build from source
 
@@ -105,7 +176,7 @@ go run ./cmd/bindle --help
 
 ## Contributing
 
-Early days — issues and discussion welcome. The guiding "definition of done" for the MVP is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Early days — issues and discussion welcome. The MVP "definition of done" is in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## License
 

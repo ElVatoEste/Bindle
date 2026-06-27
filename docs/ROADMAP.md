@@ -1,66 +1,89 @@
 # Bindle — Roadmap
 
+Tres horizontes: **MVP** (probar el flujo end-to-end), **v1.0** (usable en producción real), **v2.0** (ecosistema y adopción amplia).
+
 ## Decisiones abiertas (resolver primero)
 - [x] **Lenguaje del CLI**: **Go 1.26+** (binario único, cross-platform, corre en PASE).
 - [ ] **Backend del registry (MVP)**: dir IFS / SAVF en host IBM i / bucket S3-compatible.
-- [ ] **Motor de build**: envolver Bob (ibmi-bob) vs orquestación propia.
+- [ ] **Motor de build**: envolver Bob (ibmi-bob) vs orquestación propia. Preferencia: envolver Bob.
 - [ ] **Transporte a IBM i**: SSH (ssh/scp + CL) vs ODBC (mapepire) vs itoolkit.
-- [ ] **Acceso a un IBM i de pruebas**: ¿host propio, PUB400.com (gratis), o partición de la org?
+- [ ] **IBM i de pruebas**: host propio / PUB400.com (gratis) / partición de la org.
 
-## Fase 0 — Fundaciones (este setup)
-- [x] Estructura del repo, docs de planeación, .gitignore, CLAUDE.md.
-- [ ] Confirmar decisiones abiertas.
-- [ ] Definir entorno de pruebas IBM i.
-- [ ] Esqueleto del CLI (`bindle --help`, subcomandos vacíos).
+---
 
-## Fase 1 — Manifiesto + Resolver (sin tocar IBM i todavía)
+## 🟡 MVP — "el flujo funciona"
+Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM i real.
+
+**Fundaciones**
+- [x] Estructura del repo, docs de planeación, branding, `.gitignore`.
+- [x] Esqueleto del CLI (`bindle --help`, subcomandos stub).
+- [ ] Confirmar decisiones abiertas + entorno de pruebas.
+
+**Manifiesto + Resolver** (sin tocar IBM i)
 - [ ] Parser/validador de `bindle.json` (+ JSON Schema).
-- [ ] Construcción del grafo de dependencias + orden topológico.
-- [ ] Resolución de versiones (rangos semver) en memoria/registry mock.
+- [ ] Grafo de dependencias + orden topológico.
+- [ ] Resolución de rangos semver (registry mock con fixtures).
 - [ ] Generación de `bindle.lock`.
-- [ ] Tests unitarios del resolver con un registry simulado (fixtures).
+- [ ] Tests unitarios del resolver.
 
-## Fase 2 — Registry mínimo
-- [ ] Formato de índice (`index.json`) y layout de artefactos.
-- [ ] `bindle publish` a un registry local (dir/IFS).
+**Registry mínimo**
+- [ ] Layout + `index.json`/`versions.json`.
+- [ ] `bindle publish` a registry local (dir/IFS).
 - [ ] `bindle fetch` + verificación por hash.
 - [ ] `bindle list` / `bindle tree`.
 
-## Fase 3 — Build (envolver Bob)
+**Build (envolver Bob)**
 - [ ] `bindle build`: compila en orden de dependencia.
 - [ ] Generación de `*BNDDIR` desde el manifiesto.
 - [ ] Cálculo/registro de la **signature** del `*SRVPGM`.
 - [ ] Empaquetado a SAVF.
 
-## Fase 4 — Install end-to-end en IBM i
-- [ ] Transport elegido funcionando (ejecutar CL + transferir SAVF + correr SQL).
-- [ ] `bindle install`: resolve → fetch → RSTLIB/RSTOBJ → migraciones → wiring *LIBL/*BNDDIR.
+**Install end-to-end**
+- [ ] Transport elegido (ejecutar CL + transferir SAVF + correr SQL).
+- [ ] `bindle install`: resolve → fetch → RSTLIB → migraciones → wiring `*LIBL`/`*BNDDIR`.
 - [ ] Validación de signature contra el lock (abortar en mismatch).
-- [ ] Idempotencia + upgrade.
 
-## Fase 5 — Migraciones robustas
-- [ ] Tracking de migraciones aplicadas (tabla de control por schema).
-- [ ] Up only (MVP) → rollback (después).
-- [ ] Orden determinista + checksum por migración.
+**Definición de "MVP logrado":** módulo demo `modfact` (con 1 dependencia + 2 migraciones) instalable en una app `miapp` vía `bindle add` + `bindle install`, y `calcularFactura(...)` llamable sin cablear nada a mano.
 
-## Fase 6 — DX y publicación
+---
+
+## 🟢 v1.0 — "usable en producción"
+Objetivo: un equipo IBM i real lo adopta para módulos productivos, conviviendo con su pipeline.
+
+**Robustez de migraciones**
+- [ ] Tabla de control de migraciones aplicadas (por schema) + checksum.
+- [ ] Orden determinista; idempotencia; upgrade seguro.
+
+**Confiabilidad y DX**
 - [ ] `bindle init` con plantillas (módulo / proyecto).
 - [ ] Mensajes de error claros (signature mismatch, conflicto de deps, lib faltante).
-- [ ] Docs de uso + ejemplo real (módulo demo `modfact` + app consumidora).
-- [ ] CI (lint, tests). Versionado del propio Bindle.
+- [ ] Idempotencia total de install + `bindle update`.
+- [ ] Build-from-source como fallback al SAVF (portabilidad entre niveles de OS).
 
-## Más allá (backlog)
-- Firma criptográfica de paquetes en el registry.
-- Registry público/compartido (si hay tracción de comunidad).
-- Integración con Code4i (VS Code).
-- Análisis de impacto (qué consumidores rompe un cambio de signature).
-- Soporte COBOL/CL además de RPG.
-- Rollback de migraciones.
+**Coexistencia (adoption-first)**
+- [ ] `bindle plan` / dry-run: muestra qué objetos/CL/SQL ejecutaría, sin aplicar.
+- [ ] Export de CL inspeccionable para integrarse a change management existente.
+- [ ] Adopción incremental: un módulo bajo Bindle sin tocar el resto del build.
 
-## Caso de prueba guía (definición de "funciona")
-Módulo demo **`modfact`** (facturación) con:
-- `*SRVPGM` público + `/copy` de prototipos,
-- 1 dependencia (`modbase`),
-- 2 migraciones DDL.
+**Calidad del proyecto**
+- [ ] CI (lint, tests), releases versionados del propio Bindle.
+- [ ] Docs de uso + ejemplo real completo.
+- [ ] Registry privado estable (backend MVP endurecido).
 
-App **`miapp`** que hace `bindle add modfact` → `bindle install` y puede llamar `calcularFactura(...)` sin cablear nada a mano. Ese flujo end-to-end = MVP logrado.
+---
+
+## 🔵 v2.0 — "ecosistema y adopción amplia"
+Objetivo: pasar de herramienta a ecosistema.
+
+- [ ] **Firma criptográfica** de paquetes (autenticidad del publicador).
+- [ ] **Registry compartido/federado** (si hay tracción de comunidad).
+- [ ] **Análisis de impacto**: qué consumidores rompe un cambio de signature.
+- [ ] Integración con **Code4i (VS Code)** y/o RDi.
+- [ ] Soporte **COBOL/CL** además de RPG.
+- [ ] **Rollback** de migraciones.
+- [ ] Backends de registry adicionales + mirroring.
+
+---
+
+## Riesgo guía
+El mayor riesgo es **adopción**, no tecnología (ver [`VISION.md`](VISION.md)). Toda fase se valida contra una pregunta: *¿puede un equipo conservador meter esto en su pipeline sin romper lo que ya tiene?* Si la respuesta es no, se rediseña antes de avanzar.

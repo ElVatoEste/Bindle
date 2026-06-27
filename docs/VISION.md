@@ -40,6 +40,18 @@ Regla de oro: el consumidor **solo ve la API pública** (service program + proto
 4. **Estado incluido.** Migraciones de DB se aplican en orden al instalar/actualizar.
 5. **Wiring automático.** Bindle arma `*BNDDIR` (compile-time) y `*LIBL` (runtime).
 6. **Abierto y ligero.** CLI simple, sin plataforma pesada. Se apoya en lo que ya existe (Bob, git, SSH).
+7. **Coexistencia primero (adoption-first).** Bindle se mete en los procesos existentes, no los reemplaza. Genera objetos IBM i estándar (`*SRVPGM`, `*BNDDIR`, SAVF, CL inspeccionable) → reversible, sin lock-in. Se adopta **un módulo a la vez**, sin big-bang.
+
+## El reto real: adopción, no tecnología
+El obstáculo principal de Bindle no es construir el CLI — es que **las tiendas IBM i son conservadoras** y desconfían de herramientas que tocan su build/deploy crítico. Por eso el diseño se subordina a la adopción gradual:
+
+- **Sin reescritura masiva.** Adoptas Bindle para un módulo nuevo o uno aislado; el resto sigue compilando como siempre.
+- **Convive con change management existente.** Lo que Bindle produce son objetos y CL normales que el equipo puede revisar, versionar y correr a mano si quiere.
+- **Envuelve, no pelea, el toolchain.** Bob para build, git para fuente, `RSTLIB`/library list para deploy. Nada propietario obligatorio.
+- **Reversible.** Todo artefacto es un objeto IBM i estándar. Si abandonas Bindle, no quedas atrapado.
+- **Migración gradual medible.** Un equipo puede empezar con `bindle build` (solo build), luego sumar registry, luego install/migraciones — escalando confianza por fases.
+
+Métrica de éxito de adopción: que un equipo pueda meter **su primer módulo Bindle en producción sin cambiar su pipeline existente**.
 
 ## Quién lo usa
 - **Equipos / organizaciones**: estandarizan lógica común (facturación, impuestos, clientes); cada proyecto nuevo arranca instalando módulos.
