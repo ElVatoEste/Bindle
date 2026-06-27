@@ -6,7 +6,7 @@ Tres horizontes: **MVP** (probar el flujo end-to-end), **v1.0** (usable en produ
 - [x] **Lenguaje del CLI**: **Go 1.26+** (binario único, cross-platform, corre en PASE).
 - [ ] **Backend del registry (MVP)**: dir IFS / SAVF en host IBM i / bucket S3-compatible.
 - [ ] **Motor de build**: envolver Bob (ibmi-bob) vs orquestación propia. Preferencia: envolver Bob.
-- [ ] **Transporte a IBM i**: SSH (ssh/scp + CL) vs ODBC (mapepire) vs itoolkit.
+- [x] **Transporte a IBM i**: **SSH** (golang.org/x/crypto/ssh + SFTP). ODBC/mapepire queda pa SQL de migraciones.
 - [ ] **IBM i de pruebas**: host propio / PUB400.com (gratis) / partición de la org.
 
 ---
@@ -42,7 +42,8 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 **Install end-to-end**
 - [x] `bindle install` (lado local): resolve → `bindle.lock` → fetch → verificación sha256 → cache.
 - [x] Reuso del lock existente (reproducible) + flag `--update`.
-- [ ] Transport elegido (ejecutar CL + transferir SAVF + correr SQL).
+- [x] Transport SSH: ejecutar PASE/QSH (`Run`), ejecutar CL (`RunCL` vía `system`), transferir archivos (SFTP `Upload`/`Download`). Validado en vivo contra pub400 (IBM i 7.5). `bindle ping` / `bindle exec`.
+- [ ] Correr SQL de migraciones (ODBC/mapepire).
 - [ ] `bindle install` (lado IBM i): RSTLIB → migraciones → wiring `*LIBL`/`*BNDDIR`.
 - [ ] Validación de signature contra el lock (abortar en mismatch).
 

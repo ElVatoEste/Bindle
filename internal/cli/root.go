@@ -30,6 +30,8 @@ func newRootCmd() *cobra.Command {
 		newPublishCmd(),
 		newListCmd(),
 		newProfileCmd(),
+		newPingCmd(),
+		newExecCmd(),
 	)
 	return root
 }
