@@ -1,0 +1,24 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bindle logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d1b16"/>
+      <stop offset="1" stop-color="#0a0f0d"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="48" y1="48" x2="208" y2="208" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="ring2" x1="208" y1="48" x2="48" y2="208" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6ee7b7"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+
+  <!-- two interlocking links = "binding" -->
+  <g transform="translate(128 128)" fill="none">
+    <rect x="-86" y="-32" width="104" height="64" rx="32" transform="rotate(-32)" stroke="url(#ring)" stroke-width="20"/>
+    <rect x="-18" y="-32" width="104" height="64" rx="32" transform="rotate(-32)" stroke="url(#ring2)" stroke-width="20"/>
+  </g>
+</svg>

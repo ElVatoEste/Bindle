@@ -1,0 +1,48 @@
+# --- Claude / AI tooling (NEVER commit — keep AI participation private) ---
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.cursor/
+.aider*
+*.claude
+
+# --- Go ---
+/bin/
+/dist/
+/bindle
+/bindle.exe
+*.test
+*.out
+*.prof
+coverage.txt
+vendor/
+# keep go.mod/go.sum committed; cmd/bindle/ is source, not the binary
+
+# --- Node (if tooling/docs site added) ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- IBM i artifacts (local build output) ---
+*.savf
+*.SAVF
+.bindle-cache/
+.bindle/build/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+!.vscode/extensions.json
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+*.local
+bindle.lock.local
+credentials.json
