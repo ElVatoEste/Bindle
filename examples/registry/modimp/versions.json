@@ -1,7 +1,17 @@
 {
   "name": "modimp",
   "versions": [
-    { "version": "1.2.5", "signature": "I12500", "dependencies": { "modbase": "^1.0.0" } },
-    { "version": "1.2.0", "signature": "I12000", "dependencies": { "modbase": "^1.0.0" } }
+    {
+      "version": "1.2.5",
+      "signature": "I12500",
+      "artifact": "modimp/1.2.5/MODIMP.savf",
+      "hash": "sha256:5d09f760fea9969a8dc9d17e5114a2be04e5f30a22c0c7da27a9bbf2364e9e3a",
+      "dependencies": { "modbase": "^1.0.0" }
+    },
+    {
+      "version": "1.2.0",
+      "signature": "I12000",
+      "dependencies": { "modbase": "^1.0.0" }
+    }
   ]
 }

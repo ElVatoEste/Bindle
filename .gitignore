@@ -27,8 +27,8 @@ pnpm-debug.log*
 # --- IBM i artifacts (local build output) ---
 *.savf
 *.SAVF
-.bindle-cache/
-.bindle/build/
+!examples/**/*.savf
+.bindle/
 
 # --- OS / editor ---
 .DS_Store

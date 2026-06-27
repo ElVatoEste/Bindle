@@ -5,7 +5,7 @@
       "version": "2.3.0",
       "signature": "A1B2C3",
       "artifact": "modfact/2.3.0/MODFACT.savf",
-      "hash": "sha256:demo",
+      "hash": "sha256:efed68cd056c665a93ba8ed9045e8ed93fdfca61a14cc5e4253ba6d1e66c60a8",
       "dependencies": {
         "modbase": ">=1.0.0 <2.0.0",
         "modimp": "^1.2.0"

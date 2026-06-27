@@ -29,7 +29,7 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 **Registry mínimo**
 - [x] Layout + `versions.json` (registry backed por directorio: `internal/registry`).
 - [ ] `bindle publish` a registry local (dir/IFS).
-- [ ] `bindle fetch` + verificación por hash.
+- [x] `bindle fetch` + verificación por hash (dentro de `bindle install`).
 - [x] `bindle list` / `bindle list tree` (resuelve y muestra el grafo real).
 
 **Build (envolver Bob)**
@@ -39,8 +39,10 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [ ] Empaquetado a SAVF.
 
 **Install end-to-end**
+- [x] `bindle install` (lado local): resolve → `bindle.lock` → fetch → verificación sha256 → cache.
+- [x] Reuso del lock existente (reproducible) + flag `--update`.
 - [ ] Transport elegido (ejecutar CL + transferir SAVF + correr SQL).
-- [ ] `bindle install`: resolve → fetch → RSTLIB → migraciones → wiring `*LIBL`/`*BNDDIR`.
+- [ ] `bindle install` (lado IBM i): RSTLIB → migraciones → wiring `*LIBL`/`*BNDDIR`.
 - [ ] Validación de signature contra el lock (abortar en mismatch).
 
 **Definición de "MVP logrado":** módulo demo `modfact` (con 1 dependencia + 2 migraciones) instalable en una app `miapp` vía `bindle add` + `bindle install`, y `calcularFactura(...)` llamable sin cablear nada a mano.

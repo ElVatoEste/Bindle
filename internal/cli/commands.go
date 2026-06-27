@@ -21,14 +21,6 @@ func newAddCmd() *cobra.Command {
 	}
 }
 
-func newInstallCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "install",
-		Short: "Resolve, fetch, restore objects, run migrations, wire *LIBL",
-		RunE:  notImplemented("install"),
-	}
-}
-
 func newBuildCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "build",

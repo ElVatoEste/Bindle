@@ -57,10 +57,12 @@ bindle publish
 
 That's the whole loop: **init → add → install → build → publish.** No hand-edited binding directories, no manual `RSTLIB`, no remembering which DDL to run.
 
-> **Try it now** (no IBM i needed) — `list`/`tree` already resolve a real dependency graph:
+> **Try it now** (no IBM i needed) — these already resolve a real dependency graph,
+> write a reproducible lock, and fetch + verify artifacts:
 > ```bash
 > go run ./cmd/bindle list      -f examples/miapp/bindle.json --registry examples/registry
 > go run ./cmd/bindle list tree -f examples/miapp/bindle.json --registry examples/registry
+> go run ./cmd/bindle install   -f examples/miapp/bindle.json --registry examples/registry
 > ```
 > See [`examples/`](examples/).
 

@@ -22,6 +22,9 @@ go run ./cmd/bindle list -f examples/miapp/bindle.json --registry examples/regis
 
 # dependency tree
 go run ./cmd/bindle list tree -f examples/miapp/bindle.json --registry examples/registry
+
+# resolve, write bindle.lock, fetch + verify artifacts into the cache
+go run ./cmd/bindle install -f examples/miapp/bindle.json --registry examples/registry
 ```
 
 Expected output:
@@ -40,5 +43,10 @@ miapp 0.1.0
         └── modbase 1.4.2
 ```
 
+`install` resolves the graph, writes a reproducible [`miapp/bindle.lock`](miapp/bindle.lock),
+then fetches each artifact and verifies its `sha256` against the lock before caching it
+under `.bindle/cache/`. Run it twice: the first run writes the lock, the second reuses it.
+
 This exercises the manifest parser, the dependency resolver (version selection +
-topological order), and the file-backed registry — end to end, all in Go.
+topological order), the file-backed registry, and the installer (lock + fetch + hash
+verification) — end to end, all in Go. Deploy to an IBM i host is the next step.

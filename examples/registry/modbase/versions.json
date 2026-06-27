@@ -1,7 +1,12 @@
 {
   "name": "modbase",
   "versions": [
-    { "version": "1.4.2", "signature": "B14200" },
+    {
+      "version": "1.4.2",
+      "signature": "B14200",
+      "artifact": "modbase/1.4.2/MODBASE.savf",
+      "hash": "sha256:fa1ea3511ebe3613114a31d9a7addd749a4d89070859870c750230e962e3ae19"
+    },
     { "version": "1.3.0", "signature": "B13000" }
   ]
 }

@@ -77,3 +77,17 @@ func (f *File) Versions(name string) ([]resolver.Available, error) {
 	}
 	return out, nil
 }
+
+// Fetch returns the raw bytes of an artifact identified by its
+// registry-relative path (the "artifact" field of versions.json).
+func (f *File) Fetch(artifact string) ([]byte, error) {
+	if artifact == "" {
+		return nil, fmt.Errorf("empty artifact path")
+	}
+	path := filepath.Join(f.root, filepath.FromSlash(artifact))
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("fetch artifact %q: %w", path, err)
+	}
+	return data, nil
+}
