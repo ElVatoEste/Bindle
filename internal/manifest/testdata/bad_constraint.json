@@ -1,0 +1,9 @@
+{
+  "schema": "bindle/v0",
+  "name": "modfact",
+  "version": "2.3.0",
+  "library": "MODFACT",
+  "dependencies": {
+    "modbase": "not-a-version"
+  }
+}

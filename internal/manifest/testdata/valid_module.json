@@ -1,0 +1,21 @@
+{
+  "schema": "bindle/v0",
+  "name": "modfact",
+  "version": "2.3.0",
+  "description": "Logica de facturacion",
+  "author": "Escalia Technologies",
+  "license": "MIT",
+  "library": "MODFACT",
+  "exports": {
+    "srvpgm": "FACTSRV",
+    "binder": "binder/FACTSRV.bnd",
+    "copy": "FACTPR"
+  },
+  "dependencies": {
+    "modbase": ">=1.0.0 <2.0.0",
+    "modimp": "^1.2.0"
+  },
+  "build": { "engine": "bob", "src": "src/", "objects": ["FACTMOD", "FACTSRV"] },
+  "migrations": { "dir": "migrations/", "schema": "MODFACT" },
+  "runtime": { "libraryList": ["MODFACT", "MODBASE", "MODIMP"] }
+}

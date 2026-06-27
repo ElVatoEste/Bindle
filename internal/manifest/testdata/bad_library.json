@@ -1,0 +1,6 @@
+{
+  "schema": "bindle/v0",
+  "name": "modfact",
+  "version": "2.3.0",
+  "library": "this_lib_name_is_way_too_long"
+}

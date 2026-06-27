@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bindle.escalia.tech/schema/bindle.schema.json",
+  "title": "Bindle manifest (bindle.json)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "name", "version", "library"],
+  "properties": {
+    "schema": { "const": "bindle/v0" },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "description": "Lowercase kebab-case package name."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z-.]+)?(?:\\+[0-9A-Za-z-.]+)?$",
+      "description": "Semantic version (semver)."
+    },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "license": { "type": "string" },
+    "private": { "type": "boolean" },
+    "library": {
+      "type": "string",
+      "pattern": "^[A-Z#$@][A-Z0-9#$@_]{0,9}$",
+      "description": "IBM i object name: uppercase, <=10 chars, starts with letter/#/$/@."
+    },
+    "exports": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "srvpgm": { "type": "string" },
+        "binder": { "type": "string" },
+        "signature": { "type": "string" },
+        "copy": { "type": "string" }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "propertyNames": { "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engine": { "enum": ["bob", "native"] },
+        "src": { "type": "string" },
+        "objects": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "migrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dir": { "type": "string" },
+        "schema": { "type": "string" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "libraryList": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "registries": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  }
+}

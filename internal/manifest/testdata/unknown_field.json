@@ -1,0 +1,7 @@
+{
+  "schema": "bindle/v0",
+  "name": "modfact",
+  "version": "2.3.0",
+  "library": "MODFACT",
+  "totallyUnknownField": true
+}

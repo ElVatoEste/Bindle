@@ -1,0 +1,14 @@
+{
+  "schema": "bindle/v0",
+  "name": "miapp",
+  "version": "0.1.0",
+  "private": true,
+  "library": "MIAPP",
+  "dependencies": {
+    "modfact": "^2.3.0",
+    "modclientes": "^1.0.0"
+  },
+  "registries": {
+    "default": "ifs:///bindle/registry"
+  }
+}
