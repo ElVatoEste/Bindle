@@ -20,17 +20,17 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [ ] Confirmar decisiones abiertas + entorno de pruebas.
 
 **Manifiesto + Resolver** (sin tocar IBM i)
-- [ ] Parser/validador de `bindle.json` (+ JSON Schema).
-- [ ] Grafo de dependencias + orden topológico.
-- [ ] Resolución de rangos semver (registry mock con fixtures).
-- [ ] Generación de `bindle.lock`.
-- [ ] Tests unitarios del resolver.
+- [x] Parser/validador de `bindle.json` (+ JSON Schema).
+- [x] Grafo de dependencias + orden topológico.
+- [x] Resolución de rangos semver (registry mock con fixtures).
+- [x] Generación de `bindle.lock`.
+- [x] Tests unitarios del resolver.
 
 **Registry mínimo**
-- [ ] Layout + `index.json`/`versions.json`.
+- [x] Layout + `versions.json` (registry backed por directorio: `internal/registry`).
 - [ ] `bindle publish` a registry local (dir/IFS).
 - [ ] `bindle fetch` + verificación por hash.
-- [ ] `bindle list` / `bindle tree`.
+- [x] `bindle list` / `bindle list tree` (resuelve y muestra el grafo real).
 
 **Build (envolver Bob)**
 - [ ] `bindle build`: compila en orden de dependencia.

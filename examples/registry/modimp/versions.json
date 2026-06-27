@@ -1,0 +1,7 @@
+{
+  "name": "modimp",
+  "versions": [
+    { "version": "1.2.5", "signature": "I12500", "dependencies": { "modbase": "^1.0.0" } },
+    { "version": "1.2.0", "signature": "I12000", "dependencies": { "modbase": "^1.0.0" } }
+  ]
+}

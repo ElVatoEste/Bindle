@@ -1,0 +1,16 @@
+{
+  "name": "modfact",
+  "versions": [
+    {
+      "version": "2.3.0",
+      "signature": "A1B2C3",
+      "artifact": "modfact/2.3.0/MODFACT.savf",
+      "hash": "sha256:demo",
+      "dependencies": {
+        "modbase": ">=1.0.0 <2.0.0",
+        "modimp": "^1.2.0"
+      }
+    },
+    { "version": "2.2.1", "signature": "9F8E7D" }
+  ]
+}

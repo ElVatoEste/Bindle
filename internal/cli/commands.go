@@ -44,17 +44,3 @@ func newPublishCmd() *cobra.Command {
 		RunE:  notImplemented("publish"),
 	}
 }
-
-func newListCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "Inspect the resolved dependency graph",
-		RunE:  notImplemented("list"),
-	}
-	cmd.AddCommand(&cobra.Command{
-		Use:   "tree",
-		Short: "Print the dependency tree",
-		RunE:  notImplemented("list tree"),
-	})
-	return cmd
-}
