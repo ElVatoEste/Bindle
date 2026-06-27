@@ -12,7 +12,7 @@ Reusable RPG/ILE business-logic modules — declared, resolved, built, and deplo
 [![Status](https://img.shields.io/badge/status-early%20planning-f59e0b)](docs/ROADMAP.md)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Platform](https://img.shields.io/badge/platform-IBM%20i%20(ILE)-052FAD)](https://www.ibm.com/products/ibm-i)
-[![License](https://img.shields.io/badge/license-MIT-10b981)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPLv3-10b981)](LICENSE)
 [![PRs](https://img.shields.io/badge/PRs-welcome-10b981)](#contributing)
 
 <sub>by <strong>Escalia Technologies</strong></sub>
@@ -180,4 +180,10 @@ Early days — issues and discussion welcome. The MVP "definition of done" is in
 
 ## License
 
-[MIT](LICENSE) © Escalia Technologies
+Bindle is licensed under the **[GNU General Public License v3.0](LICENSE)**.
+
+You may use, study, modify, and redistribute it freely. Any distributed derivative
+must remain open under the GPLv3 — it **cannot** be taken closed-source.
+
+© Escalia Technologies. Copyright is retained by the author.
+**Commercial licensing** (for use without GPLv3 obligations) is available — contact Escalia Technologies.

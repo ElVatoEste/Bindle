@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Command bindle is the package & dependency manager for IBM i ILE objects.
 package main
 

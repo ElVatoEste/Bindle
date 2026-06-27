@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Package manifest reads and validates bindle.json manifests and bindle.lock files.
 //
 // It is the source of truth for a module's identity, exports (service program,
