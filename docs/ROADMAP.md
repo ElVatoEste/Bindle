@@ -17,7 +17,8 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 **Fundaciones**
 - [x] Estructura del repo, docs de planeación, branding, `.gitignore`.
 - [x] Esqueleto del CLI (`bindle --help`, subcomandos stub).
-- [ ] Confirmar decisiones abiertas + entorno de pruebas.
+- [x] Sistema de perfiles de conexión host-agnóstico (`internal/config`, `bindle profile`, `docs/CONNECTION.md`).
+- [ ] Confirmar decisiones abiertas + entorno de pruebas (host pub400.com:2222).
 
 **Manifiesto + Resolver** (sin tocar IBM i)
 - [x] Parser/validador de `bindle.json` (+ JSON Schema).
@@ -28,7 +29,7 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 
 **Registry mínimo**
 - [x] Layout + `versions.json` (registry backed por directorio: `internal/registry`).
-- [ ] `bindle publish` a registry local (dir/IFS).
+- [x] `bindle publish` a registry local (artefacto + `versions.json` + hash; `--force`).
 - [x] `bindle fetch` + verificación por hash (dentro de `bindle install`).
 - [x] `bindle list` / `bindle list tree` (resuelve y muestra el grafo real).
 
@@ -57,7 +58,7 @@ Objetivo: un equipo IBM i real lo adopta para módulos productivos, conviviendo 
 - [ ] Orden determinista; idempotencia; upgrade seguro.
 
 **Confiabilidad y DX**
-- [ ] `bindle init` con plantillas (módulo / proyecto).
+- [x] `bindle init` con plantillas (módulo / proyecto) — adelantado del v1.0.
 - [ ] Mensajes de error claros (signature mismatch, conflicto de deps, lib faltante).
 - [ ] Idempotencia total de install + `bindle update`.
 - [ ] Build-from-source como fallback al SAVF (portabilidad entre niveles de OS).

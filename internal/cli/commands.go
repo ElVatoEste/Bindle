@@ -4,14 +4,6 @@ package cli
 
 import "github.com/spf13/cobra"
 
-func newInitCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "init",
-		Short: "Scaffold a new module or project (bindle.json)",
-		RunE:  notImplemented("init"),
-	}
-}
-
 func newAddCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "add <module>[@version]",
@@ -26,13 +18,5 @@ func newBuildCmd() *cobra.Command {
 		Use:   "build",
 		Short: "Compile module objects in dependency order",
 		RunE:  notImplemented("build"),
-	}
-}
-
-func newPublishCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "publish",
-		Short: "Package (SAVF) and push to the registry",
-		RunE:  notImplemented("publish"),
 	}
 }
