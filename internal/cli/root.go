@@ -4,8 +4,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -41,11 +39,4 @@ func newRootCmd() *cobra.Command {
 // Execute runs the root command.
 func Execute() error {
 	return newRootCmd().Execute()
-}
-
-// notImplemented is a placeholder action for stubbed subcommands.
-func notImplemented(name string) func(*cobra.Command, []string) error {
-	return func(_ *cobra.Command, _ []string) error {
-		return fmt.Errorf("%q not implemented yet", name)
-	}
 }

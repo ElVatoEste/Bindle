@@ -66,6 +66,8 @@ Objetivo: un equipo IBM i real lo adopta para módulos productivos, conviviendo 
 
 **Confiabilidad y DX**
 - [x] `bindle init` con plantillas (módulo / proyecto) — adelantado del v1.0.
+- [x] `bindle add <module>[@version]` — resuelve la última versión del registry (rango `^`) o usa el constraint dado; escribe el manifiesto.
+- [x] Diagnósticos IBM i legibles en fallos CL (`ParseDiagnostics`).
 - [ ] Mensajes de error claros (signature mismatch, conflicto de deps, lib faltante).
 - [ ] Idempotencia total de install + `bindle update`.
 - [ ] Build-from-source como fallback al SAVF (portabilidad entre niveles de OS).
