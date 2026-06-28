@@ -16,6 +16,7 @@ import (
 	"github.com/ElVatoEste/Bindle/internal/registry"
 	"github.com/ElVatoEste/Bindle/internal/sqlchan"
 	"github.com/ElVatoEste/Bindle/internal/transport"
+	"github.com/ElVatoEste/Bindle/internal/ui"
 )
 
 const defaultCacheDir = ".bindle/cache"
@@ -58,6 +59,7 @@ type installParams struct {
 }
 
 func runInstall(w io.Writer, p installParams) error {
+	uo := ui.New(w)
 	m, err := manifest.Load(p.file)
 	if err != nil {
 		return err
@@ -67,34 +69,38 @@ func runInstall(w io.Writer, p installParams) error {
 		return err
 	}
 
+	sp := uo.Spinner("resolving and fetching " + m.Name)
+	sp.Start()
 	res, err := installer.Install(registry.Open(root), installer.Options{
 		ManifestPath: p.file,
 		CacheDir:     p.cacheDir,
 		Update:       p.update,
 	})
+	sp.Stop()
 	if err != nil {
+		uo.Fail("install failed")
 		return err
 	}
 
-	fmt.Fprintf(w, "%s %s\n", m.Name, m.Version)
+	uo.Heading("%s %s", m.Name, m.Version)
+	lockState := "reused"
 	if res.LockWritten {
-		fmt.Fprintf(w, "lock: %s (written)\n", res.LockPath)
-	} else {
-		fmt.Fprintf(w, "lock: %s (reused)\n", res.LockPath)
+		lockState = "written"
 	}
+	uo.KeyVal("lock", res.LockPath+" "+uo.Dim("("+lockState+")"))
 
-	fmt.Fprintf(w, "fetched %d artifact(s) to %s:\n", len(res.Fetched), p.cacheDir)
+	uo.OK("fetched %d artifact(s) to %s", len(res.Fetched), uo.Dim(p.cacheDir))
 	tw := tabwriter.NewWriter(w, 0, 2, 2, ' ', 0)
 	for _, f := range res.Fetched {
-		fmt.Fprintf(tw, "  %s\t%s\t%s\t(%d B)\n", f.Name, f.Version, f.Path, f.Bytes)
+		fmt.Fprintf(tw, "    %s\t%s\t%s\n", uo.Bold(f.Name), f.Version, uo.Gray(fmt.Sprintf("%d B", f.Bytes)))
 	}
 	_ = tw.Flush()
 	if len(res.Skipped) > 0 {
-		fmt.Fprintf(w, "no artifact (skipped): %v\n", res.Skipped)
+		uo.Bullet("no artifact (skipped): %v", res.Skipped)
 	}
 
 	if !p.deploy {
-		fmt.Fprintln(w, "(local only — pass --deploy to install onto the IBM i host)")
+		uo.Info("%s", uo.Dim("(local only — pass --deploy to install onto the IBM i host)"))
 		return nil
 	}
 	return deployToHost(w, p, res.LockPath)
@@ -115,23 +121,25 @@ func deployToHost(w io.Writer, p installParams, lockPath string) error {
 	}
 	defer conn.Close()
 
-	fmt.Fprintf(w, "deploying to %s@%s...\n", prof.User, prof.Host)
+	uo := ui.New(w)
+	sp := uo.Spinner(fmt.Sprintf("deploying to %s@%s", prof.User, prof.Host))
+	sp.Start()
 	deployed, err := installer.Deploy(conn, lock, installer.DeployOptions{
 		CacheDir:        p.cacheDir,
 		LibraryOverride: p.lib,
 		WireLibList:     true,
-		Logf:            func(format string, a ...any) { fmt.Fprintf(w, "  "+format+"\n", a...) },
+		Logf:            func(format string, a ...any) { sp.Update(format, a...) },
 	})
+	sp.Stop()
 	if err != nil {
+		uo.Fail("deploy failed")
 		return err
 	}
 
-	tw := tabwriter.NewWriter(w, 0, 2, 2, ' ', 0)
 	for _, d := range deployed {
-		fmt.Fprintf(tw, "  installed\t%s %s\t%s/%s\t(sig %s)\n", d.Name, d.Version, d.Library, d.Srvpgm, shortSig(d.Signature))
+		uo.OK("installed %s %s %s %s", uo.Bold(d.Name), d.Version,
+			uo.Dim(d.Library+"/"+d.Srvpgm), uo.Gray("sig "+shortSig(d.Signature)))
 	}
-	_ = tw.Flush()
-	fmt.Fprintf(w, "deployed %d package(s)\n", len(deployed))
 
 	return runDeployMigrations(w, conn, lock, p.cacheDir)
 }

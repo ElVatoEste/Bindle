@@ -15,6 +15,7 @@ import (
 	"github.com/ElVatoEste/Bindle/internal/manifest"
 	"github.com/ElVatoEste/Bindle/internal/registry"
 	"github.com/ElVatoEste/Bindle/internal/resolver"
+	"github.com/ElVatoEste/Bindle/internal/ui"
 )
 
 func newListCmd() *cobra.Command {
@@ -86,25 +87,27 @@ func localPath(uri string) string {
 }
 
 func printList(w io.Writer, m *manifest.Manifest, res *resolver.Resolution) {
-	fmt.Fprintf(w, "%s %s\n", m.Name, m.Version)
-	fmt.Fprintf(w, "resolved %d package(s):\n", len(res.Selected))
+	uo := ui.New(w)
+	uo.Heading("%s %s", m.Name, m.Version)
+	uo.Info("%s", uo.Dim(fmt.Sprintf("resolved %d package(s):", len(res.Selected))))
 
 	tw := tabwriter.NewWriter(w, 0, 2, 2, ' ', 0)
 	for _, name := range res.Order { // install order: dependencies first
-		fmt.Fprintf(tw, "  %s\t%s\n", name, res.Selected[name].Version)
+		fmt.Fprintf(tw, "  %s\t%s\n", uo.Bold(name), uo.Cyan(res.Selected[name].Version))
 	}
 	_ = tw.Flush()
 }
 
 func printTree(w io.Writer, m *manifest.Manifest, res *resolver.Resolution) {
-	fmt.Fprintf(w, "%s %s\n", m.Name, m.Version)
+	uo := ui.New(w)
+	uo.Heading("%s %s", m.Name, m.Version)
 	deps := sortedStrKeys(m.Dependencies)
 	for i, name := range deps {
-		printNode(w, name, res, "", i == len(deps)-1)
+		printNode(uo, name, res, "", i == len(deps)-1)
 	}
 }
 
-func printNode(w io.Writer, name string, res *resolver.Resolution, prefix string, last bool) {
+func printNode(uo *ui.Printer, name string, res *resolver.Resolution, prefix string, last bool) {
 	branch, childPrefix := "├── ", prefix+"│   "
 	if last {
 		branch, childPrefix = "└── ", prefix+"    "
@@ -115,11 +118,11 @@ func printNode(w io.Writer, name string, res *resolver.Resolution, prefix string
 	if ok {
 		version = av.Version
 	}
-	fmt.Fprintf(w, "%s%s%s %s\n", prefix, branch, name, version)
+	uo.Info("%s%s %s", uo.Gray(prefix+branch), uo.Bold(name), uo.Cyan(version))
 
 	children := sortedStrKeys(av.Dependencies)
 	for i, child := range children {
-		printNode(w, child, res, childPrefix, i == len(children)-1)
+		printNode(uo, child, res, childPrefix, i == len(children)-1)
 	}
 }
 

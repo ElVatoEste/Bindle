@@ -16,6 +16,7 @@ import (
 	"github.com/ElVatoEste/Bindle/internal/manifest"
 	"github.com/ElVatoEste/Bindle/internal/sqlchan"
 	"github.com/ElVatoEste/Bindle/internal/transport"
+	"github.com/ElVatoEste/Bindle/internal/ui"
 )
 
 func newSQLCmd() *cobra.Command {
@@ -103,20 +104,26 @@ func runMigrate(w io.Writer, configPath string, ov config.Overrides, file, schem
 		return fmt.Errorf("no target schema: set migrations.schema/library or pass --schema")
 	}
 
+	uo := ui.New(w)
 	conn, closer, err := dialSQL(configPath, ov, db2util)
 	if err != nil {
 		return err
 	}
 	defer closer()
 
-	fmt.Fprintf(w, "migrating %s (schema %s)\n", m.Name, schema)
+	uo.Heading("migrating %s %s", m.Name, uo.Dim("(schema "+schema+")"))
+	sp := uo.Spinner("applying migrations")
+	sp.Start()
 	res, err := sqlchan.Migrate(conn, schema, dir, func(format string, a ...any) {
-		fmt.Fprintf(w, "  "+format+"\n", a...)
+		sp.Update(format, a...)
 	})
+	sp.Stop()
 	if err != nil {
+		uo.Fail("migration failed")
 		return err
 	}
-	fmt.Fprintf(w, "applied %d, skipped %d (already applied)\n", len(res.Applied), len(res.Skipped))
+	uo.OK("applied %s, skipped %s %s", uo.Bold(fmt.Sprint(len(res.Applied))),
+		uo.Bold(fmt.Sprint(len(res.Skipped))), uo.Gray("(already applied)"))
 	return nil
 }
 

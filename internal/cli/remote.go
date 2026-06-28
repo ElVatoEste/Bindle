@@ -11,6 +11,7 @@ import (
 
 	"github.com/ElVatoEste/Bindle/internal/config"
 	"github.com/ElVatoEste/Bindle/internal/transport"
+	"github.com/ElVatoEste/Bindle/internal/ui"
 )
 
 func resolveProfile(configPath string, ov config.Overrides) (*config.Profile, error) {
@@ -46,47 +47,55 @@ func newPingCmd() *cobra.Command {
 }
 
 func runPing(w io.Writer, configPath string, ov config.Overrides) error {
+	out := ui.New(w)
 	p, err := resolveProfile(configPath, ov)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "connecting to %s@%s:%d (%s)...\n", p.User, p.Host, p.Port, p.Transport)
 
+	sp := out.Spinner(fmt.Sprintf("connecting to %s@%s:%d ...", p.User, p.Host, p.Port))
+	sp.Start()
 	conn, err := transport.DialSSH(*p)
+	sp.Stop()
 	if err != nil {
+		out.Fail("connect %s@%s:%d: %v", p.User, p.Host, p.Port, err)
 		return err
 	}
 	defer conn.Close()
-	fmt.Fprintln(w, "connected ✓")
+	out.OK("connected to %s@%s:%d", out.Bold(p.User), p.Host, p.Port)
 
 	if res, err := conn.Run("id"); err == nil && strings.TrimSpace(res.Stdout) != "" {
-		fmt.Fprintf(w, "  %s\n", strings.TrimSpace(res.Stdout))
+		out.KeyVal("identity", strings.TrimSpace(res.Stdout))
 	}
 	if res, err := conn.RunCL("DSPLIBL"); err == nil {
 		for _, line := range strings.Split(res.Stdout, "\n") {
 			if strings.Contains(line, "CUR ") {
-				fmt.Fprintf(w, "  current library: %s\n", strings.Fields(line)[0])
+				out.KeyVal("current lib", strings.Fields(line)[0])
 			}
 		}
 	}
 
 	// capability probes (non-fatal)
-	probe := conn
 	report := func(label, cmd string) {
-		r, e := probe.Run(cmd)
+		r, e := conn.Run(cmd)
 		ok := e == nil && !r.Failed() && strings.TrimSpace(r.Stdout) != ""
-		mark := "no"
-		detail := ""
 		if ok {
-			mark = "yes"
-			detail = " (" + strings.TrimSpace(r.Stdout) + ")"
+			out.OK("%s %s", padRightLabel(label), out.Gray("("+strings.TrimSpace(r.Stdout)+")"))
+		} else {
+			out.Warn("%s %s", padRightLabel(label), out.Gray("not found"))
 		}
-		fmt.Fprintf(w, "  %-10s %s%s\n", label+":", mark, detail)
 	}
 	report("bob", "command -v makei 2>/dev/null || command -v bob 2>/dev/null")
 	report("yum", "/QOpenSys/pkgs/bin/yum --version 2>/dev/null | head -1")
 	report("git", "command -v git 2>/dev/null")
 	return nil
+}
+
+func padRightLabel(s string) string {
+	for len(s) < 5 {
+		s += " "
+	}
+	return s
 }
 
 func newExecCmd() *cobra.Command {

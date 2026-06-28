@@ -13,6 +13,7 @@ import (
 	"github.com/ElVatoEste/Bindle/internal/config"
 	"github.com/ElVatoEste/Bindle/internal/manifest"
 	"github.com/ElVatoEste/Bindle/internal/transport"
+	"github.com/ElVatoEste/Bindle/internal/ui"
 )
 
 func newBuildCmd() *cobra.Command {
@@ -56,6 +57,7 @@ func runBuild(w io.Writer, configPath string, ov config.Overrides, file, lib, ou
 		out = filepath.Join(".bindle", "build", m.Exports.Srvpgm+".savf")
 	}
 
+	uo := ui.New(w)
 	p, err := resolveProfile(configPath, ov)
 	if err != nil {
 		return err
@@ -66,24 +68,29 @@ func runBuild(w io.Writer, configPath string, ov config.Overrides, file, lib, ou
 	}
 	defer conn.Close()
 
+	sp := uo.Spinner("building " + m.Name + "@" + m.Version)
+	sp.Start()
 	res, err := builder.Build(conn, builder.Options{
 		Manifest:   m,
 		SourceDir:  srcDir,
 		TargetLib:  lib,
 		OutputPath: out,
 		Keep:       keep,
-		Logf:       func(format string, a ...any) { fmt.Fprintf(w, "  "+format+"\n", a...) },
+		Logf:       func(format string, a ...any) { sp.Update(format, a...) },
 	})
+	sp.Stop()
 	if err != nil {
+		uo.Fail("build failed")
 		return err
 	}
 
-	fmt.Fprintf(w, "built %s@%s\n", m.Name, m.Version)
-	fmt.Fprintf(w, "  library:   %s\n", res.TargetLib)
-	fmt.Fprintf(w, "  srvpgm:    %s\n", res.Srvpgm)
-	fmt.Fprintf(w, "  signature: %s\n", res.Signature)
-	fmt.Fprintf(w, "  savf:      %s\n", res.SavfPath)
-	fmt.Fprintf(w, "\npublish with: bindle publish -f %s --artifact %s --signature %s\n",
-		file, res.SavfPath, res.Signature)
+	uo.OK("built %s", uo.Bold(m.Name+"@"+m.Version))
+	uo.KeyVal("library", res.TargetLib)
+	uo.KeyVal("srvpgm", res.Srvpgm)
+	uo.KeyVal("signature", uo.Cyan(res.Signature))
+	uo.KeyVal("savf", res.SavfPath)
+	uo.Info("")
+	uo.Info("%s bindle publish -f %s --artifact %s --signature %s",
+		uo.Dim("publish with:"), file, res.SavfPath, res.Signature)
 	return nil
 }
