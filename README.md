@@ -10,6 +10,7 @@ Reusable RPG/ILE business-logic modules — declared, resolved, built, and deplo
 <br>
 
 [![CI](https://github.com/ElVatoEste/Bindle/actions/workflows/ci.yml/badge.svg)](https://github.com/ElVatoEste/Bindle/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ElVatoEste/Bindle?color=10b981)](https://github.com/ElVatoEste/Bindle/releases/latest)
 [![Status](https://img.shields.io/badge/status-working%20alpha-3b82f6)](docs/ROADMAP.md)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Platform](https://img.shields.io/badge/platform-IBM%20i%20(ILE)-052FAD)](https://www.ibm.com/products/ibm-i)
@@ -214,10 +215,17 @@ go install github.com/ElVatoEste/Bindle/cmd/bindle@latest
 bindle --help
 ```
 
-**Prebuilt binaries** — each tagged release publishes archives for Linux, macOS,
-Windows, and **IBM i PASE (aix/ppc64)** on the
-[Releases](https://github.com/ElVatoEste/Bindle/releases) page (built by GoReleaser).
-Download, extract, and put `bindle` on your `PATH`.
+**Prebuilt binaries** — every release ships archives for Linux, macOS, Windows,
+and **IBM i PASE (aix/ppc64)** on the
+[Releases](https://github.com/ElVatoEste/Bindle/releases/latest) page (built by
+GoReleaser, with `checksums.txt`). Download, extract, and put `bindle` on your `PATH`:
+
+```bash
+# example: IBM i PASE
+curl -LO https://github.com/ElVatoEste/Bindle/releases/latest/download/bindle_0.1.0_aix_ppc64.tar.gz
+tar xzf bindle_0.1.0_aix_ppc64.tar.gz
+./bindle --version
+```
 
 **From source:**
 
