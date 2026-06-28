@@ -1,6 +1,6 @@
-# modgreet — callable proof (manual, needs a reachable IBM i)
+# modgreet — callable proof
 
-This proves end-to-end that the service program **Bindle built** is callable on the
+Proves end-to-end that the service program **Bindle built** is callable on the
 host: a program binds it and invokes its exported procedure.
 
 ```bash
@@ -9,20 +9,18 @@ PROFILE=pub400 LIB=VATODEV1 SRVPGM=GRTBNDL \
   bash examples/modules/modgreet/test/run-callable.sh
 ```
 
-Expected final value:
+Output (verified live on pub400, IBM i 7.5):
 
 ```
-Hello, Bindle! (from Bindle)
+BINDLE-RESULT: Hello, Bindle! (from Bindle)
 ```
 
 What it does:
-1. `bindle put` uploads `GRTCALL.rpgle` (the caller).
-2. Sets up `*DTAARA GRTRES`, a binding directory over the built `*SRVPGM`, and
-   compiles the caller (`GRTCALL`) plus a CL runner (`GRTRUN`).
-3. `GRTRUN` sets `INQMSGRPY(*DFT)` then `CALL GRTCALL`, so a runtime escape
-   auto-replies instead of leaving the job in **MSGW** (which hangs SSH).
-4. Reads `GRTRES` — the greeting returned by the bound procedure.
+1. `bindle put` uploads `GRTOUT.rpgle` (the caller).
+2. Creates a binding directory over the built `*SRVPGM` and compiles the caller.
+3. `CALL GRTOUT` — binds `BGREET` from the Bindle-built service program, calls it,
+   and prints the result to stdout via C `printf` (captured over SSH; no data area
+   and no job that can hang in MSGW).
 
-> Status: written and ready; not yet run end-to-end because pub400 was
-> unreachable. Run it when the host is back to close the "installed & callable"
-> proof.
+✅ **Status: verified.** The Bindle-built service program (deterministic signature
+`99FB4E0FACC21955936359A366D9FBD3`) resolves and runs its export end to end.

@@ -181,16 +181,21 @@ proven on an unrestricted host.
 | `profile` · `ping` · `exec` · `put` · `get` | ✅ |
 | `build` (compile RPG → `*SRVPGM` → SAVF) | ✅ live |
 | **deterministic, signature-controlled** binder builds | ✅ live |
+| **callable** — a program binds the built `*SRVPGM` and runs its export | ✅ live |
+
+> Live end-to-end on pub400 (IBM i 7.5): `build` → a caller binds the result →
+> `CALL` prints `BINDLE-RESULT: Hello, Bindle! (from Bindle)`. See
+> [`examples/modules/modgreet/test`](examples/modules/modgreet/test).
 
 **Implemented, not yet fully proven end-to-end:**
 
 - `install --deploy` (RSTOBJ + signature check + wire `*LIBL`) — code + unit tests;
   the test host (pub400, shared) denies `RSTOBJ`, so the real restore awaits a host
   with restore authority.
-- Runtime CALL of a deployed module — caller ready ([`examples/modules/modgreet/test`](examples/modules/modgreet/test)); not yet run.
-- DB migrations and full job-log capture — planned (need the SQL channel).
+- DB migrations and full job-log capture — designed ([`docs/SQL_CHANNEL.md`](docs/SQL_CHANNEL.md)),
+  not yet implemented (need the SQL channel).
 
-Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`ROADMAP`](docs/ROADMAP.md)
+Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`SQL_CHANNEL`](docs/SQL_CHANNEL.md) · [`ROADMAP`](docs/ROADMAP.md)
 
 ## Build from source
 

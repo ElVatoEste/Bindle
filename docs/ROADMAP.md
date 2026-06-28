@@ -48,8 +48,8 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [x] Reuso del lock existente (reproducible) + flag `--update`.
 - [x] Transport SSH: ejecutar PASE/QSH (`Run`), ejecutar CL (`RunCL` vía `system`), transferir archivos (SFTP `Upload`/`Download`). Validado en vivo contra pub400 (IBM i 7.5). `bindle ping` / `bindle exec`.
 - [x] `bindle install --deploy` (lado IBM i): upload → CPYFRMSTMF → RSTOBJ → **validación de signature contra el lock** (aborta en mismatch) → wiring `*LIBL`. Metadata library/srvpgm propagada registry→lock.
-- [x] Bindable: un programa `CRTBNDRPG` liga (BNDDIR) contra el `*SRVPGM` construido por Bindle y resuelve su export `GREET` — prueba que el artefacto es un service program válido y usable.
-- [ ] Prueba runtime de la llamada (CALL) end-to-end — pendiente (quirk RPG + MSGW sobre SSH batch).
+- [x] Bindable: un programa `CRTBNDRPG` liga (BNDDIR) contra el `*SRVPGM` construido por Bindle y resuelve su export.
+- [x] **Callable end-to-end** (verificado en pub400): `CALL` del programa que liga el `*SRVPGM` de Bindle ejecuta `bgreet('Bindle')` → `BINDLE-RESULT: Hello, Bindle! (from Bindle)`. Caller escribe a stdout vía `printf` (sin data area, sin MSGW). Ver `examples/modules/modgreet/test/`.
 - [ ] Correr SQL de migraciones (ODBC/mapepire / RUNSQLSTM).
 - [ ] Nota: pub400 deniega `RSTOBJ` (host compartido); el deploy es correcto pero se ejerce en hosts con autoridad de restore.
 
