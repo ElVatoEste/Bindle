@@ -44,6 +44,14 @@ func resolveBuildInfo() {
 	}
 }
 
+// versionLine renders the version, appending "(commit, date)" only when known.
+func versionLine() string {
+	if commit == "none" && date == "unknown" {
+		return "bindle " + version + "\n"
+	}
+	return "bindle " + version + " (" + commit + ", " + date + ")\n"
+}
+
 func newRootCmd() *cobra.Command {
 	resolveBuildInfo()
 	root := &cobra.Command{
@@ -54,7 +62,7 @@ func newRootCmd() *cobra.Command {
 		SilenceErrors: false,
 		Version:       version,
 	}
-	root.SetVersionTemplate("bindle {{.Version}} (" + commit + ", " + date + ")\n")
+	root.SetVersionTemplate(versionLine())
 
 	root.AddCommand(
 		newInitCmd(),
