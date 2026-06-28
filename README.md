@@ -9,7 +9,7 @@ Reusable RPG/ILE business-logic modules — declared, resolved, built, and deplo
 
 <br>
 
-[![Status](https://img.shields.io/badge/status-early%20planning-f59e0b)](docs/ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-working%20alpha-3b82f6)](docs/ROADMAP.md)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Platform](https://img.shields.io/badge/platform-IBM%20i%20(ILE)-052FAD)](https://www.ibm.com/products/ibm-i)
 [![License](https://img.shields.io/badge/license-GPLv3-10b981)](LICENSE)
@@ -39,23 +39,23 @@ manifest   =  bindle.json
 ## Quickstart
 
 ```bash
-# 1. scaffold a project (creates bindle.json)
-bindle init
+# 1. scaffold a module or project (creates bindle.json)
+bindle init --module --name modgreet
 
-# 2. add a dependency from the registry
-bindle add modfact@^2.3.0
+# 2. build the module on the IBM i host (compile → signature → SAVF)
+bindle build --profile prod
 
-# 3. resolve + fetch + restore objects + run migrations + wire *LIBL
-bindle install
+# 3. publish the artifact + metadata to the registry
+bindle publish --artifact .bindle/build/GREETSRV.savf
 
-# 4. build your own module's objects (in dependency order)
-bindle build
-
-# 5. publish your module so others can install it
-bindle publish
+# --- in a consumer project ---
+bindle add modgreet                  # pin ^latest from the registry
+bindle install                       # resolve → lock → fetch → verify (local)
+bindle install --deploy --profile prod   # + restore onto IBM i, verify signature, wire *LIBL
 ```
 
-That's the whole loop: **init → add → install → build → publish.** No hand-edited binding directories, no manual `RSTLIB`, no remembering which DDL to run.
+That's the loop: **build → publish → add → install (→ deploy).** No hand-written
+binder source, no manual `RSTOBJ`, no guessing which DDL to run.
 
 > **Try it now** (no IBM i needed) — these already resolve a real dependency graph,
 > write a reproducible lock, and fetch + verify artifacts:
@@ -77,8 +77,9 @@ That's the whole loop: **init → add → install → build → publish.** No ha
 
   "exports": {
     "srvpgm": "FACTSRV",                // public service program
-    "binder": "binder/FACTSRV.bnd",     // binder language = defines the signature
     "copy":   "FACTPR"                  // /copy member = the public API "header"
+    // Bindle generates the binder source + a deterministic signature.
+    // Optionally pin the export symbols: "symbols": ["CALCFACT", "APPLYTAX"]
   },
 
   "dependencies": {
@@ -86,7 +87,7 @@ That's the whole loop: **init → add → install → build → publish.** No ha
     "modimp":  "^1.2.0"
   },
 
-  "build":      { "engine": "bob", "src": "src/", "objects": ["FACTMOD", "FACTSRV"] },
+  "build":      { "engine": "native", "src": "src/", "objects": ["FACTMOD"] },
   "migrations": { "dir": "migrations/", "schema": "MODFACT" },
   "runtime":    { "libraryList": ["MODFACT", "MODBASE", "MODIMP"] }
 }
@@ -97,17 +98,16 @@ Full spec: [`docs/MANIFEST_SPEC.md`](docs/MANIFEST_SPEC.md) · Package layout: [
 ## How `install` works
 
 ```text
-bindle install
-  │
-  ├─ read   bindle.json + bindle.lock
-  ├─ resolve dependency graph        (versions + ILE signatures)
-  ├─ fetch   artifacts from registry (SAVF + metadata, verified by hash)
-  ├─ restore objects to IBM i        (SAVF → RSTLIB / RSTOBJ)
-  ├─ migrate DB schema               (run module migrations, in order)
-  └─ wire    *BNDDIR + library list  (compile-time + runtime resolution)
-        │
-        ▼
-  ✓ module API callable from your program
+bindle install                       bindle install --deploy
+  │                                    │  (everything on the left, then:)
+  ├─ read   bindle.json + lock         ├─ upload SAVF over SFTP
+  ├─ resolve graph (vers + sigs)       ├─ CPYFRMSTMF → RSTOBJ into target lib
+  ├─ fetch  artifacts from registry    ├─ verify *SRVPGM signature == lock
+  ├─ verify sha256 against the lock    └─ wire the library list (*LIBL)
+  └─ cache locally                           │
+        │                                     ▼
+        ▼                              ✓ module installed & bindable on IBM i
+  ✓ reproducible, verified cache
 ```
 
 > Internal component view (manifest · resolver · registry · builder · installer · transport) lives in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -156,23 +156,41 @@ internal/
   manifest/            read & validate bindle.json / bindle.lock
   resolver/            dependency graph, version + signature resolution
   registry/            fetch / publish artifacts (SAVF + metadata)
-  builder/             compile in dep order, *BNDDIR, signature, SAVF
-  installer/           resolve→fetch→restore→migrate→wire *LIBL/*BNDDIR
-  transport/           SSH (CL/SAVF) + ODBC (SQL) to the host
-docs/                  VISION · ARCHITECTURE · MANIFEST_SPEC · PACKAGE_ANATOMY · REGISTRY · ROADMAP
+  builder/             compile RPG, generate binder + deterministic signature, SAVF
+  installer/           local install (lock/fetch/verify) + deploy (RSTOBJ/sig-check/wire)
+  config/              host-agnostic connection profiles (~/.bindle/config.json)
+  transport/           SSH: run CL/PASE, SFTP upload/download
+docs/                  VISION · ARCHITECTURE · MANIFEST_SPEC · PACKAGE_ANATOMY · REGISTRY · CONNECTION · BUILD · ROADMAP
+examples/              runnable demo registry, consumer, and a buildable module
 assets/                logo & banner
 ```
 
 ## Status
 
-🚧 **Early planning.** The CLI scaffold builds and runs (`bindle --help`); commands are stubs. See:
+🛠️ **Working alpha.** All CLI commands are implemented (no stubs). The local
+flow and on-host build run end-to-end; full deploy is implemented but not yet
+proven on an unrestricted host.
 
-- [`docs/VISION.md`](docs/VISION.md) — the problem and the bet
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components & data model
-- [`docs/MANIFEST_SPEC.md`](docs/MANIFEST_SPEC.md) — the `bindle.json` format
-- [`docs/PACKAGE_ANATOMY.md`](docs/PACKAGE_ANATOMY.md) — what's inside a package
-- [`docs/REGISTRY.md`](docs/REGISTRY.md) — publish · store · consume
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) — MVP → v1.0 → v2.0
+**Verified working** (the last two live against a real IBM i, 7.5):
+
+| Area | State |
+|------|-------|
+| `init` · `add` · `list` · `list tree` | ✅ |
+| `install` (resolve → lock → fetch → **sha256 verify** → cache) | ✅ |
+| `publish` (artifact + metadata to registry) | ✅ |
+| `profile` · `ping` · `exec` · `put` · `get` | ✅ |
+| `build` (compile RPG → `*SRVPGM` → SAVF) | ✅ live |
+| **deterministic, signature-controlled** binder builds | ✅ live |
+
+**Implemented, not yet fully proven end-to-end:**
+
+- `install --deploy` (RSTOBJ + signature check + wire `*LIBL`) — code + unit tests;
+  the test host (pub400, shared) denies `RSTOBJ`, so the real restore awaits a host
+  with restore authority.
+- Runtime CALL of a deployed module — caller ready ([`examples/modules/modgreet/test`](examples/modules/modgreet/test)); not yet run.
+- DB migrations and full job-log capture — planned (need the SQL channel).
+
+Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`ROADMAP`](docs/ROADMAP.md)
 
 ## Build from source
 
