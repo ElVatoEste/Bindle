@@ -190,16 +190,24 @@ func cl(h Host, label, format string, a ...any) error {
 
 // CL runs a single CL command and returns an error on a transport failure or a
 // non-zero CL exit. Shared with other packages that drive the host (e.g. deploy).
+// On CL failure the error includes the IBM i diagnostics found in the output.
 func CL(h Host, label, command string) error {
 	r, err := h.RunCL(command)
 	if err != nil {
 		return fmt.Errorf("%s: %w", label, err)
 	}
 	if r.Failed() {
-		return fmt.Errorf("%s failed:\n%s", label, tail(r.Stdout, r.Stderr))
+		return errStr(FormatDiagnostics(label, r.Stdout, r.Stderr))
 	}
 	return nil
 }
+
+// errStr wraps a preformatted diagnostic string as an error.
+func errStr(s string) error { return &diagError{s} }
+
+type diagError struct{ s string }
+
+func (e *diagError) Error() string { return e.s }
 
 // Signature reads the current signature of a service program via DSPSRVPGM.
 func Signature(h Host, lib, srv string) (string, error) { return signatureOf(h, lib, srv) }
@@ -211,7 +219,7 @@ func signatureOf(h Host, lib, srv string) (string, error) {
 		return "", fmt.Errorf("DSPSRVPGM: %w", err)
 	}
 	if r.Failed() {
-		return "", fmt.Errorf("DSPSRVPGM failed:\n%s", tail(r.Stdout, r.Stderr))
+		return "", errStr(FormatDiagnostics("DSPSRVPGM", r.Stdout, r.Stderr))
 	}
 	return parseSignature(r.Stdout)
 }
