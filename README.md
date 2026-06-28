@@ -9,6 +9,7 @@ Reusable RPG/ILE business-logic modules — declared, resolved, built, and deplo
 
 <br>
 
+[![CI](https://github.com/ElVatoEste/Bindle/actions/workflows/ci.yml/badge.svg)](https://github.com/ElVatoEste/Bindle/actions/workflows/ci.yml)
 [![Status](https://img.shields.io/badge/status-working%20alpha-3b82f6)](docs/ROADMAP.md)
 [![Go](https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white)](https://go.dev)
 [![Platform](https://img.shields.io/badge/platform-IBM%20i%20(ILE)-052FAD)](https://www.ibm.com/products/ibm-i)
@@ -204,13 +205,26 @@ proven on an unrestricted host.
 
 Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`SQL_CHANNEL`](docs/SQL_CHANNEL.md) · [`ROADMAP`](docs/ROADMAP.md)
 
-## Build from source
+## Install
+
+**With Go** (installs `bindle` onto your `PATH` at `$(go env GOPATH)/bin`):
+
+```bash
+go install github.com/ElVatoEste/Bindle/cmd/bindle@latest
+bindle --help
+```
+
+**Prebuilt binaries** — each tagged release publishes archives for Linux, macOS,
+Windows, and **IBM i PASE (aix/ppc64)** on the
+[Releases](https://github.com/ElVatoEste/Bindle/releases) page (built by GoReleaser).
+Download, extract, and put `bindle` on your `PATH`.
+
+**From source:**
 
 ```bash
 git clone https://github.com/ElVatoEste/Bindle.git
 cd Bindle
-go build ./...
-go run ./cmd/bindle --help
+go install ./cmd/bindle      # global, or: go build ./...
 ```
 
 ## Contributing

@@ -8,7 +8,12 @@ import (
 )
 
 // version is set at build time via -ldflags "-X ...cli.version=...".
-var version = "0.0.1-dev"
+// Build metadata, injected at release time via -ldflags (see .goreleaser.yaml).
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
@@ -19,6 +24,7 @@ func newRootCmd() *cobra.Command {
 		SilenceErrors: false,
 		Version:       version,
 	}
+	root.SetVersionTemplate("bindle {{.Version}} (" + commit + ", " + date + ")\n")
 
 	root.AddCommand(
 		newInitCmd(),

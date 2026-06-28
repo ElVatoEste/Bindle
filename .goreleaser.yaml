@@ -1,0 +1,79 @@
+# GoReleaser config — https://goreleaser.com
+# Build cross-platform binaries on tag and publish a GitHub release.
+version: 2
+
+project_name: bindle
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: bindle
+    main: ./cmd/bindle
+    binary: bindle
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X github.com/ElVatoEste/Bindle/internal/cli.version={{.Version}}
+      - -X github.com/ElVatoEste/Bindle/internal/cli.commit={{.ShortCommit}}
+      - -X github.com/ElVatoEste/Bindle/internal/cli.date={{.Date}}
+    goos:
+      - linux
+      - darwin
+      - windows
+      - aix      # IBM i PASE
+    goarch:
+      - amd64
+      - arm64
+      - ppc64    # IBM i / Power
+    ignore:
+      # only ppc64 makes sense on aix; drop the rest of the matrix there
+      - goos: aix
+        goarch: amd64
+      - goos: aix
+        goarch: arm64
+      # no ppc64 desktop builds
+      - goos: linux
+        goarch: ppc64
+      - goos: darwin
+        goarch: ppc64
+      - goos: windows
+        goarch: ppc64
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: bindle
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - docs/**/*
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "Bindle {{ .Version }}"
