@@ -21,6 +21,8 @@ type Lock struct {
 // LockEntry pins a single dependency to an exact version, signature, and artifact.
 type LockEntry struct {
 	Version      string   `json:"version"`
+	Library      string   `json:"library,omitempty"`
+	Srvpgm       string   `json:"srvpgm,omitempty"`
 	Signature    string   `json:"signature,omitempty"`
 	Artifact     string   `json:"artifact,omitempty"`
 	Hash         string   `json:"hash,omitempty"`

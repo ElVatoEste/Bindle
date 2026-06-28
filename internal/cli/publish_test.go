@@ -24,7 +24,7 @@ func TestPublishThenList(t *testing.T) {
 	writeFileT(t, artifact, "FACT-OBJECT")
 
 	var pub bytes.Buffer
-	if err := runPublish(&pub, modManifest, regDir, artifact, "", false); err != nil {
+	if err := runPublish(&pub, modManifest, regDir, artifact, "", "", false); err != nil {
 		t.Fatalf("publish: %v", err)
 	}
 	if !strings.Contains(pub.String(), "published modfact@2.3.0") {
@@ -53,7 +53,7 @@ func TestPublishRefusesPrivate(t *testing.T) {
 	writeFileT(t, artifact, "x")
 
 	var buf bytes.Buffer
-	if err := runPublish(&buf, app, filepath.Join(dir, "reg"), artifact, "", false); err == nil {
+	if err := runPublish(&buf, app, filepath.Join(dir, "reg"), artifact, "", "", false); err == nil {
 		t.Fatal("expected refusal to publish a private project")
 	}
 }

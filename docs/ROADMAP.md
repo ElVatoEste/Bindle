@@ -44,9 +44,11 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [x] `bindle install` (lado local): resolve → `bindle.lock` → fetch → verificación sha256 → cache.
 - [x] Reuso del lock existente (reproducible) + flag `--update`.
 - [x] Transport SSH: ejecutar PASE/QSH (`Run`), ejecutar CL (`RunCL` vía `system`), transferir archivos (SFTP `Upload`/`Download`). Validado en vivo contra pub400 (IBM i 7.5). `bindle ping` / `bindle exec`.
-- [ ] Correr SQL de migraciones (ODBC/mapepire).
-- [ ] `bindle install` (lado IBM i): RSTLIB → migraciones → wiring `*LIBL`/`*BNDDIR`.
-- [ ] Validación de signature contra el lock (abortar en mismatch).
+- [x] `bindle install --deploy` (lado IBM i): upload → CPYFRMSTMF → RSTOBJ → **validación de signature contra el lock** (aborta en mismatch) → wiring `*LIBL`. Metadata library/srvpgm propagada registry→lock.
+- [x] Bindable: un programa `CRTBNDRPG` liga (BNDDIR) contra el `*SRVPGM` construido por Bindle y resuelve su export `GREET` — prueba que el artefacto es un service program válido y usable.
+- [ ] Prueba runtime de la llamada (CALL) end-to-end — pendiente (quirk RPG + MSGW sobre SSH batch).
+- [ ] Correr SQL de migraciones (ODBC/mapepire / RUNSQLSTM).
+- [ ] Nota: pub400 deniega `RSTOBJ` (host compartido); el deploy es correcto pero se ejerce en hosts con autoridad de restore.
 
 **Definición de "MVP logrado":** módulo demo `modfact` (con 1 dependencia + 2 migraciones) instalable en una app `miapp` vía `bindle add` + `bindle install`, y `calcularFactura(...)` llamable sin cablear nada a mano.
 

@@ -165,7 +165,13 @@ func Build(h Host, opts Options) (*Result, error) {
 // cl runs a CL command and fails on either a transport error or a non-zero CL
 // exit (RunCL reports CL escape messages via the exit code, not a Go error).
 func cl(h Host, label, format string, a ...any) error {
-	r, err := h.RunCL(fmt.Sprintf(format, a...))
+	return CL(h, label, fmt.Sprintf(format, a...))
+}
+
+// CL runs a single CL command and returns an error on a transport failure or a
+// non-zero CL exit. Shared with other packages that drive the host (e.g. deploy).
+func CL(h Host, label, command string) error {
+	r, err := h.RunCL(command)
 	if err != nil {
 		return fmt.Errorf("%s: %w", label, err)
 	}
@@ -174,6 +180,9 @@ func cl(h Host, label, format string, a ...any) error {
 	}
 	return nil
 }
+
+// Signature reads the current signature of a service program via DSPSRVPGM.
+func Signature(h Host, lib, srv string) (string, error) { return signatureOf(h, lib, srv) }
 
 // signatureOf reads the current signature of a service program via DSPSRVPGM.
 func signatureOf(h Host, lib, srv string) (string, error) {

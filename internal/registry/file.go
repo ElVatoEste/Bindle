@@ -43,6 +43,8 @@ type versionsDoc struct {
 
 type versionMeta struct {
 	Version      string            `json:"version"`
+	Library      string            `json:"library,omitempty"`
+	Srvpgm       string            `json:"srvpgm,omitempty"`
 	Signature    string            `json:"signature,omitempty"`
 	Artifact     string            `json:"artifact,omitempty"`
 	Hash         string            `json:"hash,omitempty"`
@@ -75,6 +77,8 @@ func (f *File) Versions(name string) ([]resolver.Available, error) {
 		}
 		out = append(out, resolver.Available{
 			Version:      v.Version,
+			Library:      v.Library,
+			Srvpgm:       v.Srvpgm,
 			Signature:    v.Signature,
 			Artifact:     v.Artifact,
 			Hash:         v.Hash,
@@ -102,6 +106,8 @@ func (f *File) Fetch(artifact string) ([]byte, error) {
 type PublishInput struct {
 	Name         string
 	Version      string
+	Library      string
+	Srvpgm       string
 	Signature    string
 	Dependencies map[string]string
 	ArtifactName string // base filename to store, e.g. "MODFACT.savf"
@@ -149,6 +155,8 @@ func (f *File) Publish(in PublishInput, force bool) (artifactRel, hash string, e
 	doc.Name = in.Name
 	doc.upsert(versionMeta{
 		Version:      in.Version,
+		Library:      in.Library,
+		Srvpgm:       in.Srvpgm,
 		Signature:    in.Signature,
 		Artifact:     artifactRel,
 		Hash:         hash,

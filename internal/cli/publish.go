@@ -15,29 +15,29 @@ import (
 )
 
 func newPublishCmd() *cobra.Command {
-	var file, regDir, artifact, signature string
+	var file, regDir, artifact, signature, lib string
 	var force bool
 
 	cmd := &cobra.Command{
 		Use:   "publish",
 		Short: "Publish a module's artifact and metadata to the registry",
 		Long: "Write a module's artifact under <name>/<version>/ in the registry and " +
-			"upsert its versions.json (version, signature, hash, dependencies).\n\n" +
-			"Until `bindle build` exists, pass the artifact with --artifact.",
+			"upsert its versions.json (library, srvpgm, signature, hash, dependencies).",
 		Args: cobra.NoArgs,
 		RunE: func(c *cobra.Command, _ []string) error {
-			return runPublish(c.OutOrStdout(), file, regDir, artifact, signature, force)
+			return runPublish(c.OutOrStdout(), file, regDir, artifact, signature, lib, force)
 		},
 	}
 	cmd.Flags().StringVarP(&file, "file", "f", manifest.FileName, "path to the manifest")
 	cmd.Flags().StringVar(&regDir, "registry", "", "registry directory (overrides manifest registries.default)")
 	cmd.Flags().StringVar(&artifact, "artifact", "", "path to the artifact (SAVF) to publish")
 	cmd.Flags().StringVar(&signature, "signature", "", "ILE signature (defaults to exports.signature)")
+	cmd.Flags().StringVar(&lib, "library", "", "library the artifact restores into (defaults to manifest.library)")
 	cmd.Flags().BoolVar(&force, "force", false, "overwrite an already-published version")
 	return cmd
 }
 
-func runPublish(w io.Writer, file, regDir, artifactPath, signature string, force bool) error {
+func runPublish(w io.Writer, file, regDir, artifactPath, signature, lib string, force bool) error {
 	m, err := manifest.Load(file)
 	if err != nil {
 		return err
@@ -61,10 +61,15 @@ func runPublish(w io.Writer, file, regDir, artifactPath, signature string, force
 	if signature == "" && m.Exports != nil {
 		signature = m.Exports.Signature
 	}
+	if lib == "" {
+		lib = m.Library
+	}
 
 	rel, hash, err := registry.Open(root).Publish(registry.PublishInput{
 		Name:         m.Name,
 		Version:      m.Version,
+		Library:      lib,
+		Srvpgm:       m.Exports.Srvpgm,
 		Signature:    signature,
 		Dependencies: m.Dependencies,
 		ArtifactName: filepath.Base(artifactPath),

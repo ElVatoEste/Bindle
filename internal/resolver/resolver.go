@@ -25,6 +25,8 @@ type Registry interface {
 // Available describes one published version of a package.
 type Available struct {
 	Version      string
+	Library      string
+	Srvpgm       string
 	Signature    string
 	Artifact     string
 	Hash         string
@@ -45,6 +47,8 @@ func (r *Resolution) Lock() *manifest.Lock {
 	for name, av := range r.Selected {
 		l.Resolved[name] = manifest.LockEntry{
 			Version:      av.Version,
+			Library:      av.Library,
+			Srvpgm:       av.Srvpgm,
 			Signature:    av.Signature,
 			Artifact:     av.Artifact,
 			Hash:         av.Hash,
