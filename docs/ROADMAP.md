@@ -2,12 +2,25 @@
 
 Tres horizontes: **MVP** (probar el flujo end-to-end), **v1.0** (usable en producción real), **v2.0** (ecosistema y adopción amplia).
 
-## Decisiones abiertas (resolver primero)
+## Estado actual (resumen)
+
+**MVP casi completo.** Verificado en vivo contra un IBM i real (pub400, 7.5):
+build (signature determinista), publish, install (lock + verificación sha256),
+callable (un programa liga el `*SRVPGM` y corre su export), canal SQL con dos
+backends (db2util y mapepire) y migraciones idempotentes, migraciones empaquetadas
+en el artefacto. **Único paso no probado en vivo: el `RSTOBJ` del deploy** — pub400
+(host compartido) lo deniega; el código + tests existen y todo lo que lo rodea
+(upload, signature check, wiring, auto-migrate) está verificado. Cerrar eso requiere
+un IBM i con autoridad de restore (PowerVS/VPS).
+
+## Decisiones abiertas
 - [x] **Lenguaje del CLI**: **Go 1.26+** (binario único, cross-platform, corre en PASE).
-- [ ] **Backend del registry (MVP)**: dir IFS / SAVF en host IBM i / bucket S3-compatible.
-- [ ] **Motor de build**: envolver Bob (ibmi-bob) vs orquestación propia. Preferencia: envolver Bob.
-- [x] **Transporte a IBM i**: **SSH** (golang.org/x/crypto/ssh + SFTP). ODBC/mapepire queda pa SQL de migraciones.
-- [ ] **IBM i de pruebas**: host propio / PUB400.com (gratis) / partición de la org.
+- [x] **Transporte a IBM i**: **SSH** (golang.org/x/crypto/ssh + SFTP); túnel direct-tcpip para mapepire.
+- [x] **Canal SQL**: db2util (CLI sobre SSH) + mapepire (WebSocket sobre túnel SSH).
+- [x] **IBM i de pruebas**: pub400.com (gratis) — suficiente salvo RSTOBJ.
+- [ ] **Backend del registry (más allá de dir local)**: IFS / SAVF host / bucket S3-compatible.
+- [ ] **Motor de build**: hoy CL directo (sin Bob); Bob como backend opcional pendiente.
+- [ ] **Host con autoridad de restore** para cerrar el RSTOBJ del deploy.
 
 ---
 

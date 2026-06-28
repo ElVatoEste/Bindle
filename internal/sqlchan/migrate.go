@@ -16,6 +16,12 @@ import (
 // ControlTable is the per-schema table tracking applied migrations.
 const ControlTable = "BINDLE_MIGRATIONS"
 
+// schemaSetter is an optional Conn capability: point the connection at a schema
+// so unqualified object names resolve there.
+type schemaSetter interface {
+	SetSchema(schema string) error
+}
+
 // Migration is one versioned DDL/DML file.
 type Migration struct {
 	ID       string // filename without extension, e.g. "0001_init"
@@ -76,6 +82,13 @@ func Migrate(conn Conn, schema, dir string, logf func(string, ...any)) (*Migrati
 	migs, err := LoadMigrations(dir)
 	if err != nil {
 		return nil, err
+	}
+	// Point the connection at the target schema so unqualified objects in the
+	// migration bodies resolve there (backends that need it, e.g. mapepire).
+	if ss, ok := conn.(schemaSetter); ok {
+		if err := ss.SetSchema(schema); err != nil {
+			return nil, fmt.Errorf("set schema %s: %w", schema, err)
+		}
 	}
 	if err := ensureControlTable(conn, schema); err != nil {
 		return nil, err

@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ func newSQLCmd() *cobra.Command {
 	}
 	profileFlags(cmd, &ov, &configPath)
 	cmd.Flags().StringVar(&db2util, "db2util", "", "path to db2util on the host (default "+sqlchan.DefaultDb2util+")")
+	cmd.Flags().StringVar(&sqlBackend, "sql-backend", "db2util", "SQL backend: db2util | mapepire")
 	return cmd
 }
 
@@ -75,6 +77,7 @@ func newMigrateCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&file, "file", "f", manifest.FileName, "path to the manifest")
 	cmd.Flags().StringVar(&schema, "schema", "", "target schema (default manifest migrations.schema or library)")
 	cmd.Flags().StringVar(&db2util, "db2util", "", "path to db2util on the host")
+	cmd.Flags().StringVar(&sqlBackend, "sql-backend", "db2util", "SQL backend: db2util | mapepire")
 	return cmd
 }
 
@@ -117,7 +120,12 @@ func runMigrate(w io.Writer, configPath string, ov config.Overrides, file, schem
 	return nil
 }
 
-// dialSQL opens an SSH connection and wraps it as a db2util-backed SQL channel.
+// sqlBackend selects the SQL channel implementation.
+var sqlBackend string
+
+// dialSQL opens an SSH connection and wraps it as a SQL channel. The backend is
+// db2util (default; runs the PASE CLI over SSH) or mapepire (WebSocket to the
+// daemon, reached through an SSH tunnel).
 func dialSQL(configPath string, ov config.Overrides, db2util string) (sqlchan.Conn, func(), error) {
 	prof, err := resolveProfile(configPath, ov)
 	if err != nil {
@@ -127,7 +135,26 @@ func dialSQL(configPath string, ov config.Overrides, db2util string) (sqlchan.Co
 	if err != nil {
 		return nil, nil, err
 	}
-	return sqlchan.NewDb2util(ssh, db2util), func() { _ = ssh.Close() }, nil
+
+	switch sqlBackend {
+	case "", "db2util":
+		return sqlchan.NewDb2util(ssh, db2util), func() { _ = ssh.Close() }, nil
+	case "mapepire":
+		mp, err := sqlchan.DialMapepire(context.Background(), sqlchan.MapepireOptions{
+			Tunnel:   ssh,
+			User:     prof.User,
+			Password: prof.Password,
+			Insecure: true,
+		})
+		if err != nil {
+			_ = ssh.Close()
+			return nil, nil, err
+		}
+		return mp, func() { _ = mp.Close(); _ = ssh.Close() }, nil
+	default:
+		_ = ssh.Close()
+		return nil, nil, fmt.Errorf("unknown sql backend %q (use db2util or mapepire)", sqlBackend)
+	}
 }
 
 // isQuery reports whether a statement returns a result set.

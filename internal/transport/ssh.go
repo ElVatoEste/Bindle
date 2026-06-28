@@ -177,6 +177,18 @@ func (s *SSH) Download(remotePath, localPath string) error {
 	return nil
 }
 
+// DialTunnel opens a TCP connection to addr (e.g. "localhost:8076") as seen from
+// the IBM i host, tunneled through the existing SSH connection (direct-tcpip).
+// This reaches host-local services like the mapepire daemon without a separate
+// tunnel process.
+func (s *SSH) DialTunnel(addr string) (net.Conn, error) {
+	conn, err := s.client.Dial("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("ssh tunnel to %s: %w", addr, err)
+	}
+	return conn, nil
+}
+
 // Close ends the SSH connection.
 func (s *SSH) Close() error { return s.client.Close() }
 

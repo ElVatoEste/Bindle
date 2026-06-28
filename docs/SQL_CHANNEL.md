@@ -102,7 +102,22 @@ cheap stdout scrape and *adds* the job-log query when an SQL channel is configur
 Verified: `bindle migrate` applied `0001_init` then skipped on re-run; the control
 table recorded the checksum and the migration-created table accepted insert/select.
 
-Not yet done: mapepire backend (TCP/WebSocket, no db2util dependency);
-job-log diagnostics via `QSYS2.JOBLOG_INFO`; packaging a module's `migrations/`
-into the registry artifact so `install --deploy` can run them automatically
-(today `bindle migrate` runs them from the module source tree).
+**mapepire backend** — implemented and verified live on pub400:
+
+- WebSocket + TLS to the mapepire daemon, reached through an **SSH direct-tcpip
+  tunnel** (the daemon binds `localhost:8076`, so it is not exposed on the
+  network — Bindle tunnels through the SSH connection it already has).
+- Protocol: Basic-auth WS handshake → a `{"type":"connect"}` message (the daemon
+  answers "Not connected" to SQL otherwise) → `{"type":"sql","sql":...,"rows":...}`,
+  responses parsed from JSON.
+- `--sql-backend mapepire` selects it; `db2util` stays the default.
+- mapepire defaults to *SQL naming (schema = user); migrations issue
+  `SET CURRENT SCHEMA` on the persistent connection so unqualified objects land in
+  the target schema. (db2util uses *SYS naming / the current library.)
+- Verified: `bindle sql`, `bindle migrate` (apply + idempotent skip) over mapepire.
+
+Migrations are packaged into the registry artifact and run during `install --deploy`.
+
+Not yet done: job-log diagnostics via `QSYS2.JOBLOG_INFO` (now feasible on the
+persistent mapepire connection); managing the mapepire daemon lifecycle (it must
+be running on the host — Bindle currently assumes it is).

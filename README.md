@@ -182,7 +182,9 @@ proven on an unrestricted host.
 | `build` (compile RPG → `*SRVPGM` → SAVF) | ✅ live |
 | **deterministic, signature-controlled** binder builds | ✅ live |
 | **callable** — a program binds the built `*SRVPGM` and runs its export | ✅ live |
-| `sql` · `migrate` (SQL channel: db2util, control table, idempotent) | ✅ live |
+| `sql` · `migrate` (SQL channel, control table, idempotent) | ✅ live |
+| SQL backends: **db2util** (CLI over SSH) and **mapepire** (WebSocket over an SSH tunnel) | ✅ live |
+| migrations packaged into the registry artifact (publish → fetch → cache) | ✅ live |
 
 > Live end-to-end on pub400 (IBM i 7.5): `build` → a caller binds the result →
 > `CALL` prints `BINDLE-RESULT: Hello, Bindle! (from Bindle)`. See
@@ -193,11 +195,12 @@ proven on an unrestricted host.
 - `install --deploy` (RSTOBJ + signature check + wire `*LIBL`) — code + unit tests;
   the test host (pub400, shared) denies `RSTOBJ`, so the real restore awaits a host
   with restore authority.
-- `install --deploy`'s RSTOBJ + auto-migrations path — migrations are packaged,
-  fetched, and wired to run after restore; the restore itself awaits a host with
-  `RSTOBJ` authority (pub400 denies it). `bindle migrate` and the packaging are
-  verified live.
-- mapepire SQL backend + job-log diagnostics — designed ([`docs/SQL_CHANNEL.md`](docs/SQL_CHANNEL.md)).
+- **`install --deploy`'s `RSTOBJ` restore** — this is the one gap. Upload,
+  signature check, library-list wiring, and auto-migrations are all built and
+  tested; the restore step needs a host with `RSTOBJ` authority (pub400, being
+  shared, denies it). Everything around it is verified live.
+- Job-log diagnostics via `QSYS2.JOBLOG_INFO` — now feasible on the persistent
+  mapepire connection; not yet wired ([`docs/SQL_CHANNEL.md`](docs/SQL_CHANNEL.md)).
 
 Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`SQL_CHANNEL`](docs/SQL_CHANNEL.md) · [`ROADMAP`](docs/ROADMAP.md)
 
