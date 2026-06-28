@@ -44,10 +44,11 @@ type Manifest struct {
 
 // Exports describes the module's public interface.
 type Exports struct {
-	Srvpgm    string `json:"srvpgm,omitempty"`
-	Binder    string `json:"binder,omitempty"`
-	Signature string `json:"signature,omitempty"`
-	Copy      string `json:"copy,omitempty"`
+	Srvpgm    string   `json:"srvpgm,omitempty"`
+	Binder    string   `json:"binder,omitempty"`
+	Signature string   `json:"signature,omitempty"`
+	Copy      string   `json:"copy,omitempty"`
+	Symbols   []string `json:"symbols,omitempty"` // explicit export symbols (else scanned from source)
 }
 
 // Build configures how the module's objects are compiled.

@@ -1,0 +1,5 @@
+**free
+// Public prototypes for MODGREET (the module's API "header").
+dcl-pr bgreet varchar(60) extproc('BGREET');
+  name varchar(30) const;
+end-pr;

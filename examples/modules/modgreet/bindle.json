@@ -5,12 +5,12 @@
   "description": "Demo module: a greeting service program",
   "library": "MODGREET",
   "exports": {
-    "srvpgm": "HELLOSRV",
-    "copy": "HELLOPR"
+    "srvpgm": "GRTBNDL",
+    "copy": "GREETPR"
   },
   "build": {
     "engine": "native",
     "src": "src/",
-    "objects": ["HELLOMOD"]
+    "objects": ["GREET"]
   }
 }

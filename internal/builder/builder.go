@@ -9,7 +9,10 @@
 package builder
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -87,6 +90,18 @@ func Build(h Host, opts Options) (*Result, error) {
 		return nil, fmt.Errorf("create remote workdir: %w", err)
 	}
 
+	// Determine export symbols + a deterministic signature BEFORE compiling, so
+	// Bindle controls the signature rather than reading an auto-generated one.
+	symbols, err := exportSymbols(m, opts.SourceDir, modules)
+	if err != nil {
+		return nil, err
+	}
+	major, err := majorVersion(m)
+	if err != nil {
+		return nil, err
+	}
+	sig := DeterministicSignature(m.Name, major)
+
 	// 1. upload + tag + compile each module
 	for _, mod := range modules {
 		local := path.Join(filepathToSlash(opts.SourceDir), mod+".rpgle")
@@ -95,7 +110,7 @@ func Build(h Host, opts Options) (*Result, error) {
 		if err := h.Upload(fromSlash(local), remote); err != nil {
 			return nil, fmt.Errorf("upload %s: %w", mod, err)
 		}
-		if _, err := h.Run(fmt.Sprintf("setccsid 1252 %s", shellQuote(remote))); err != nil {
+		if _, err := h.Run(fmt.Sprintf("setccsid 819 %s", shellQuote(remote))); err != nil {
 			return nil, fmt.Errorf("setccsid %s: %w", mod, err)
 		}
 		_, _ = h.RunCL(fmt.Sprintf("DLTMOD MODULE(%s/%s)", lib, mod)) // ignore if absent
@@ -106,21 +121,26 @@ func Build(h Host, opts Options) (*Result, error) {
 		}
 	}
 
-	// 2. (re)create the service program
+	// 2. generate binder source with the explicit signature, upload it, and bind.
+	binderRemote := path.Join(workDir, srv+".bnd")
+	if err := uploadText(h, binderSource(sig, symbols), binderRemote); err != nil {
+		return nil, fmt.Errorf("upload binder source: %w", err)
+	}
 	_, _ = h.RunCL(fmt.Sprintf("DLTSRVPGM SRVPGM(%s/%s)", lib, srv))
 	modList := strings.Join(qualify(lib, modules), " ")
-	logf("create service program %s", srv)
+	logf("create service program %s (signature %s)", srv, sig)
 	if err := cl(h, "CRTSRVPGM",
-		"CRTSRVPGM SRVPGM(%s/%s) MODULE(%s) EXPORT(*ALL)", lib, srv, modList); err != nil {
+		"CRTSRVPGM SRVPGM(%s/%s) MODULE(%s) EXPORT(*SRCFILE) SRCSTMF('%s')",
+		lib, srv, modList, binderRemote); err != nil {
 		return nil, err
 	}
 
-	// 3. extract signature
-	sig, err := signatureOf(h, lib, srv)
-	if err != nil {
-		return nil, err
+	// 3. sanity-check: the built signature must equal the value Bindle wrote.
+	if got, err := signatureOf(h, lib, srv); err == nil {
+		if !strings.HasSuffix(strings.ToUpper(got), sig) && !strings.EqualFold(got, sig) {
+			logf("warning: host signature %s != declared %s", got, sig)
+		}
 	}
-	logf("signature %s", sig)
 
 	// 4. package: SAVF in the target lib, then copy to IFS
 	savfRemote := path.Join(workDir, savfName+".savf")
@@ -217,6 +237,87 @@ func modulesOf(m *manifest.Manifest) []string {
 		return m.Build.Objects
 	}
 	return nil
+}
+
+var exportProcRe = regexp.MustCompile(`(?im)^\s*dcl-proc\s+(\w+)\b[^;]*\bexport\b`)
+
+// exportSymbols returns the public export symbols, from manifest.exports.symbols
+// if given, otherwise scanned from the module sources (dcl-proc ... export).
+// Symbols are uppercased to match ILE's default exported names.
+func exportSymbols(m *manifest.Manifest, sourceDir string, modules []string) ([]string, error) {
+	if m.Exports != nil && len(m.Exports.Symbols) > 0 {
+		out := make([]string, len(m.Exports.Symbols))
+		for i, s := range m.Exports.Symbols {
+			out[i] = strings.ToUpper(s)
+		}
+		return out, nil
+	}
+	var syms []string
+	seen := map[string]bool{}
+	for _, mod := range modules {
+		data, err := os.ReadFile(fromSlash(path.Join(filepathToSlash(sourceDir), mod+".rpgle")))
+		if err != nil {
+			return nil, fmt.Errorf("scan exports in %s: %w", mod, err)
+		}
+		for _, mt := range exportProcRe.FindAllStringSubmatch(string(data), -1) {
+			s := strings.ToUpper(mt[1])
+			if !seen[s] {
+				seen[s] = true
+				syms = append(syms, s)
+			}
+		}
+	}
+	if len(syms) == 0 {
+		return nil, fmt.Errorf("no exported procedures found (add exports.symbols or `dcl-proc ... export`)")
+	}
+	return syms, nil
+}
+
+// DeterministicSignature derives a stable 16-byte signature (32 hex chars) from
+// the module name and MAJOR version. It is stable across minor/patch releases
+// (binary-compatible) and changes only on a major bump (breaking).
+func DeterministicSignature(name string, major uint64) string {
+	sum := sha256.Sum256([]byte(fmt.Sprintf("%s@%d", name, major)))
+	return strings.ToUpper(hex.EncodeToString(sum[:16]))
+}
+
+func majorVersion(m *manifest.Manifest) (uint64, error) {
+	v, err := m.SemVer()
+	if err != nil {
+		return 0, fmt.Errorf("version: %w", err)
+	}
+	return v.Major(), nil
+}
+
+// binderSource generates ILE binder language with an explicit signature.
+// New exports must be appended (keeping order) so the signature stays stable.
+func binderSource(sig string, symbols []string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "STRPGMEXP PGMLVL(*CURRENT) SIGNATURE(X'%s')\n", sig)
+	for _, s := range symbols {
+		fmt.Fprintf(&b, "  EXPORT SYMBOL('%s')\n", s)
+	}
+	b.WriteString("ENDPGMEXP\n")
+	return b.String()
+}
+
+// uploadText writes text to a temp local file and uploads it, then tags CCSID 819.
+func uploadText(h Host, content, remote string) error {
+	tmp, err := os.CreateTemp("", "bindle-*.bnd")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.WriteString(content); err != nil {
+		tmp.Close()
+		return err
+	}
+	tmp.Close()
+	if err := h.Upload(tmp.Name(), remote); err != nil {
+		return err
+	}
+	_, err = h.Run(fmt.Sprintf("setccsid 819 %s", shellQuote(remote)))
+	return err
 }
 
 func qualify(lib string, names []string) []string {

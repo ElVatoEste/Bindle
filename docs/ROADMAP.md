@@ -37,8 +37,11 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [x] `bindle build`: sube fuente (SFTP) → `setccsid 1252` → `CRTRPGMOD` → `CRTSRVPGM` → SAVF → descarga. Validado en vivo en pub400 (SAVF real 211200 B).
 - [x] Cálculo/registro de la **signature** del `*SRVPGM` (`DSPSRVPGM DETAIL(*SIGNATURE)`, parseado).
 - [x] Empaquetado a SAVF + `CPYTOSTMF` a IFS + download.
-- [ ] Generación de `*BNDDIR` desde el manifiesto (binder source pa signature estable).
+- [x] **Binder-source con signature determinista**: Bindle genera el binder (`STRPGMEXP SIGNATURE(X'...')` + `EXPORT SYMBOL`), `CRTSRVPGM EXPORT(*SRCFILE)`. Signature derivada de name+major → estable en minor/patch, cambia en major. Símbolos escaneados del fuente (`dcl-proc … export`) o de `exports.symbols`. Verificado en vivo (pub400): signature controlada `99FB…` aplicada al `*SRVPGM`.
+- [x] `bindle put` / `bindle get` (transferencia SFTP manual).
 - [ ] Compilar en orden de dependencia (multi-módulo con deps).
+- [ ] Captura de joblog en fallos de compilación (QSYS2.JOBLOG_INFO) para diagnóstico.
+- [ ] Backend Bob como alternativa al `native` (CL directo).
 
 **Install end-to-end**
 - [x] `bindle install` (lado local): resolve → `bindle.lock` → fetch → verificación sha256 → cache.
