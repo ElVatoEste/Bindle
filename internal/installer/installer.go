@@ -103,8 +103,25 @@ func Install(reg Registry, opts Options) (*Result, error) {
 			return nil, err
 		}
 		res.Fetched = append(res.Fetched, Fetched{Name: name, Version: entry.Version, Path: dst, Bytes: len(data)})
+
+		// fetch the package's migrations into the cache, preserving order/names
+		for _, mig := range entry.Migrations {
+			mdata, err := reg.Fetch(mig)
+			if err != nil {
+				return nil, fmt.Errorf("fetch migration %s: %w", mig, err)
+			}
+			mdst := filepath.Join(opts.CacheDir, name, entry.Version, "migrations", filepath.Base(filepath.FromSlash(mig)))
+			if err := writeFile(mdst, mdata); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return res, nil
+}
+
+// MigrationsDir returns the cache directory holding a package's fetched migrations.
+func MigrationsDir(cacheDir, name, version string) string {
+	return filepath.Join(cacheDir, name, version, "migrations")
 }
 
 type lockState struct {

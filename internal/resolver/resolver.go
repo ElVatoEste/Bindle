@@ -31,6 +31,8 @@ type Available struct {
 	Artifact     string
 	Hash         string
 	Dependencies map[string]string // name -> version constraint
+	Schema       string            // migration target schema
+	Migrations   []string          // registry-relative migration paths, ordered
 }
 
 // Resolution is the outcome of resolving a manifest's dependency graph.
@@ -53,6 +55,8 @@ func (r *Resolution) Lock() *manifest.Lock {
 			Artifact:     av.Artifact,
 			Hash:         av.Hash,
 			Dependencies: sortedKeys(av.Dependencies),
+			Schema:       av.Schema,
+			Migrations:   av.Migrations,
 		}
 	}
 	return l

@@ -193,8 +193,10 @@ proven on an unrestricted host.
 - `install --deploy` (RSTOBJ + signature check + wire `*LIBL`) — code + unit tests;
   the test host (pub400, shared) denies `RSTOBJ`, so the real restore awaits a host
   with restore authority.
-- Auto-running migrations during `install --deploy` — `bindle migrate` works today
-  from the module source; packaging `migrations/` into the registry artifact is next.
+- `install --deploy`'s RSTOBJ + auto-migrations path — migrations are packaged,
+  fetched, and wired to run after restore; the restore itself awaits a host with
+  `RSTOBJ` authority (pub400 denies it). `bindle migrate` and the packaging are
+  verified live.
 - mapepire SQL backend + job-log diagnostics — designed ([`docs/SQL_CHANNEL.md`](docs/SQL_CHANNEL.md)).
 
 Docs: [`VISION`](docs/VISION.md) · [`ARCHITECTURE`](docs/ARCHITECTURE.md) · [`MANIFEST_SPEC`](docs/MANIFEST_SPEC.md) · [`PACKAGE_ANATOMY`](docs/PACKAGE_ANATOMY.md) · [`REGISTRY`](docs/REGISTRY.md) · [`CONNECTION`](docs/CONNECTION.md) · [`BUILD`](docs/BUILD.md) · [`SQL_CHANNEL`](docs/SQL_CHANNEL.md) · [`ROADMAP`](docs/ROADMAP.md)

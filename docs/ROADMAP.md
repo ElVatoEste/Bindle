@@ -51,7 +51,7 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [x] Bindable: un programa `CRTBNDRPG` liga (BNDDIR) contra el `*SRVPGM` construido por Bindle y resuelve su export.
 - [x] **Callable end-to-end** (verificado en pub400): `CALL` del programa que liga el `*SRVPGM` de Bindle ejecuta `bgreet('Bindle')` → `BINDLE-RESULT: Hello, Bindle! (from Bindle)`. Caller escribe a stdout vía `printf` (sin data area, sin MSGW). Ver `examples/modules/modgreet/test/`.
 - [x] Canal SQL (`internal/sqlchan`): db2util-sobre-SSH (`Exec` + `Query` JSON). `bindle sql` + `bindle migrate`. Migraciones con control table, checksum (inmutabilidad), idempotencia. Verificado en vivo pub400.
-- [ ] Empaquetar `migrations/` en el artefacto del registry → que `install --deploy` las corra solo (hoy `bindle migrate` corre desde el árbol fuente).
+- [x] Empaquetar `migrations/` en el paquete del registry: `publish` sube `migrations/` + schema → `versions.json`/lock; `install` las baja al cache; `install --deploy` corre `runDeployMigrations` tras RSTOBJ. Publish/fetch verificado en vivo (pub400); el run en deploy reusa `sqlchan.Migrate` ya probado.
 - [ ] Nota: pub400 deniega `RSTOBJ` (host compartido); el deploy es correcto pero se ejerce en hosts con autoridad de restore.
 
 **Definición de "MVP logrado":** módulo demo `modfact` (con 1 dependencia + 2 migraciones) instalable en una app `miapp` vía `bindle add` + `bindle install`, y `calcularFactura(...)` llamable sin cablear nada a mano.

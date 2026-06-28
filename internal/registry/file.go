@@ -49,6 +49,8 @@ type versionMeta struct {
 	Artifact     string            `json:"artifact,omitempty"`
 	Hash         string            `json:"hash,omitempty"`
 	Dependencies map[string]string `json:"dependencies,omitempty"`
+	Schema       string            `json:"schema,omitempty"`     // migration target schema
+	Migrations   []string          `json:"migrations,omitempty"` // registry-relative paths, ordered
 	Yanked       bool              `json:"yanked,omitempty"`
 }
 
@@ -83,6 +85,8 @@ func (f *File) Versions(name string) ([]resolver.Available, error) {
 			Artifact:     v.Artifact,
 			Hash:         v.Hash,
 			Dependencies: v.Dependencies,
+			Schema:       v.Schema,
+			Migrations:   v.Migrations,
 		})
 	}
 	return out, nil
@@ -102,6 +106,12 @@ func (f *File) Fetch(artifact string) ([]byte, error) {
 	return data, nil
 }
 
+// NamedBlob is a file (basename + contents) shipped alongside the artifact.
+type NamedBlob struct {
+	Name string
+	Data []byte
+}
+
 // PublishInput describes one version being published.
 type PublishInput struct {
 	Name         string
@@ -112,6 +122,8 @@ type PublishInput struct {
 	Dependencies map[string]string
 	ArtifactName string // base filename to store, e.g. "MODFACT.savf"
 	Artifact     []byte
+	Schema       string      // migration target schema
+	Migrations   []NamedBlob // ordered migration files
 }
 
 // AlreadyExistsError is returned when publishing a version that already exists
@@ -152,6 +164,20 @@ func (f *File) Publish(in PublishInput, force bool) (artifactRel, hash string, e
 	sum := sha256.Sum256(in.Artifact)
 	hash = "sha256:" + hex.EncodeToString(sum[:])
 
+	// write migration files alongside the artifact, preserving order
+	var migRels []string
+	for _, mb := range in.Migrations {
+		rel := path.Join(in.Name, in.Version, "migrations", mb.Name)
+		mf := filepath.Join(f.root, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(mf), 0o755); err != nil {
+			return "", "", fmt.Errorf("create migrations dir: %w", err)
+		}
+		if err := os.WriteFile(mf, mb.Data, 0o644); err != nil {
+			return "", "", fmt.Errorf("write migration %s: %w", mb.Name, err)
+		}
+		migRels = append(migRels, rel)
+	}
+
 	doc.Name = in.Name
 	doc.upsert(versionMeta{
 		Version:      in.Version,
@@ -161,6 +187,8 @@ func (f *File) Publish(in PublishInput, force bool) (artifactRel, hash string, e
 		Artifact:     artifactRel,
 		Hash:         hash,
 		Dependencies: in.Dependencies,
+		Schema:       in.Schema,
+		Migrations:   migRels,
 	})
 	if err := f.writeVersions(doc); err != nil {
 		return "", "", err

@@ -27,6 +27,8 @@ type LockEntry struct {
 	Artifact     string   `json:"artifact,omitempty"`
 	Hash         string   `json:"hash,omitempty"`
 	Dependencies []string `json:"dependencies,omitempty"`
+	Schema       string   `json:"schema,omitempty"`
+	Migrations   []string `json:"migrations,omitempty"`
 }
 
 // NewLock returns an empty lock with the current schema.

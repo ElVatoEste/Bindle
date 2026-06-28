@@ -109,6 +109,37 @@ func TestInstallReusesLock(t *testing.T) {
 	}
 }
 
+func TestInstallFetchesMigrations(t *testing.T) {
+	dir := t.TempDir()
+	mPath := writeManifest(t, dir)
+	cache := filepath.Join(dir, "cache")
+
+	factBlob := []byte("FACT")
+	migBlob := []byte("CREATE TABLE T (ID INT);")
+	reg := &mockReg{
+		versions: map[string][]resolver.Available{
+			"modfact": {{Version: "2.3.0", Artifact: "modfact/2.3.0/MODFACT.savf", Hash: sha(factBlob),
+				Schema: "MODFACT", Migrations: []string{"modfact/2.3.0/migrations/0001_init.sql"}}},
+		},
+		blobs: map[string][]byte{
+			"modfact/2.3.0/MODFACT.savf":             factBlob,
+			"modfact/2.3.0/migrations/0001_init.sql": migBlob,
+		},
+	}
+
+	if _, err := Install(reg, Options{ManifestPath: mPath, CacheDir: cache}); err != nil {
+		t.Fatalf("install: %v", err)
+	}
+	migPath := filepath.Join(MigrationsDir(cache, "modfact", "2.3.0"), "0001_init.sql")
+	got, err := os.ReadFile(migPath)
+	if err != nil {
+		t.Fatalf("migration not fetched to cache: %v", err)
+	}
+	if string(got) != string(migBlob) {
+		t.Errorf("cached migration content = %q", got)
+	}
+}
+
 func TestInstallHashMismatch(t *testing.T) {
 	dir := t.TempDir()
 	mPath := writeManifest(t, dir)

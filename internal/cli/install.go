@@ -5,6 +5,7 @@ package cli
 import (
 	"fmt"
 	"io"
+	"sort"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -13,6 +14,7 @@ import (
 	"github.com/ElVatoEste/Bindle/internal/installer"
 	"github.com/ElVatoEste/Bindle/internal/manifest"
 	"github.com/ElVatoEste/Bindle/internal/registry"
+	"github.com/ElVatoEste/Bindle/internal/sqlchan"
 	"github.com/ElVatoEste/Bindle/internal/transport"
 )
 
@@ -130,7 +132,46 @@ func deployToHost(w io.Writer, p installParams, lockPath string) error {
 	}
 	_ = tw.Flush()
 	fmt.Fprintf(w, "deployed %d package(s)\n", len(deployed))
+
+	return runDeployMigrations(w, conn, lock, p.cacheDir)
+}
+
+// runDeployMigrations applies each deployed package's bundled migrations via the
+// SQL channel, against the package's schema (lock schema, else its library).
+func runDeployMigrations(w io.Writer, conn *transport.SSH, lock *manifest.Lock, cacheDir string) error {
+	sql := sqlchan.NewDb2util(conn, "")
+	for _, name := range sortedLockKeys(lock.Resolved) {
+		e := lock.Resolved[name]
+		if len(e.Migrations) == 0 {
+			continue
+		}
+		schema := e.Schema
+		if schema == "" {
+			schema = e.Library
+		}
+		if schema == "" {
+			return fmt.Errorf("%s: migrations present but no schema/library to apply them to", name)
+		}
+		dir := installer.MigrationsDir(cacheDir, name, e.Version)
+		fmt.Fprintf(w, "migrating %s (schema %s)\n", name, schema)
+		res, err := sqlchan.Migrate(sql, schema, dir, func(format string, a ...any) {
+			fmt.Fprintf(w, "  "+format+"\n", a...)
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(w, "  applied %d, skipped %d\n", len(res.Applied), len(res.Skipped))
+	}
 	return nil
+}
+
+func sortedLockKeys(m map[string]manifest.LockEntry) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func shortSig(s string) string {

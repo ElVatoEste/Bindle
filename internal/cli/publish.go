@@ -12,6 +12,7 @@ import (
 
 	"github.com/ElVatoEste/Bindle/internal/manifest"
 	"github.com/ElVatoEste/Bindle/internal/registry"
+	"github.com/ElVatoEste/Bindle/internal/sqlchan"
 )
 
 func newPublishCmd() *cobra.Command {
@@ -65,6 +66,11 @@ func runPublish(w io.Writer, file, regDir, artifactPath, signature, lib string, 
 		lib = m.Library
 	}
 
+	schema, migs, err := collectMigrations(file, m, lib)
+	if err != nil {
+		return err
+	}
+
 	rel, hash, err := registry.Open(root).Publish(registry.PublishInput{
 		Name:         m.Name,
 		Version:      m.Version,
@@ -74,6 +80,8 @@ func runPublish(w io.Writer, file, regDir, artifactPath, signature, lib string, 
 		Dependencies: m.Dependencies,
 		ArtifactName: filepath.Base(artifactPath),
 		Artifact:     data,
+		Schema:       schema,
+		Migrations:   migs,
 	}, force)
 	if err != nil {
 		return err
@@ -82,8 +90,40 @@ func runPublish(w io.Writer, file, regDir, artifactPath, signature, lib string, 
 	fmt.Fprintf(w, "published %s@%s to %s\n", m.Name, m.Version, root)
 	fmt.Fprintf(w, "  artifact: %s\n", rel)
 	fmt.Fprintf(w, "  hash:     %s\n", hash)
+	if len(migs) > 0 {
+		fmt.Fprintf(w, "  migrations: %d (schema %s)\n", len(migs), schema)
+	}
 	if signature == "" {
 		fmt.Fprintln(w, "  warning:  no signature (set exports.signature or --signature once build computes it)")
 	}
 	return nil
+}
+
+// collectMigrations reads the module's migrations/ directory (ordered) and the
+// target schema from the manifest. Returns empty if the module has no migrations.
+func collectMigrations(file string, m *manifest.Manifest, lib string) (schema string, migs []registry.NamedBlob, err error) {
+	if m.Migrations == nil || m.Migrations.Dir == "" {
+		return "", nil, nil
+	}
+	dir := filepath.Join(filepath.Dir(file), m.Migrations.Dir)
+	loaded, err := sqlchan.LoadMigrations(dir)
+	if err != nil {
+		// no migrations dir is not an error; a real read failure is
+		if os.IsNotExist(err) {
+			return "", nil, nil
+		}
+		return "", nil, err
+	}
+	for _, mg := range loaded {
+		data, rerr := os.ReadFile(mg.Path)
+		if rerr != nil {
+			return "", nil, rerr
+		}
+		migs = append(migs, registry.NamedBlob{Name: filepath.Base(mg.Path), Data: data})
+	}
+	schema = m.Migrations.Schema
+	if schema == "" {
+		schema = lib
+	}
+	return schema, migs, nil
 }
