@@ -88,6 +88,21 @@ cheap stdout scrape and *adds* the job-log query when an SQL channel is configur
 
 ## Status
 
-Design only. Not implemented. Sequencing: land the `Conn` interface +
-`RUNSQLSTM` fallback first (no new deps, works today over SSH), then the mapepire
-backend, then migrations on top, then job-log diagnostics.
+**Implemented** (`internal/sqlchan`) and verified live on pub400 (IBM i 7.5):
+
+- `Conn` interface with a **db2util-over-SSH** backend (`Exec` + JSON `Query`).
+  db2util is the open-source PASE CLI (present on pub400; `yum install db2util`
+  elsewhere). `RUNSQL` was rejected as the query backend — it runs DDL/DML but
+  does not return result sets; db2util returns `{"records":[...]}`.
+- **Migrations** (`Migrate`): control table `<schema>.BINDLE_MIGRATIONS`, ordered
+  apply, sha256 checksum guard (immutability), idempotent re-runs, one statement
+  at a time with `;`-splitting that respects quoted literals.
+- CLI: `bindle sql -- <stmt>` (query → JSON, else exec) and `bindle migrate`.
+
+Verified: `bindle migrate` applied `0001_init` then skipped on re-run; the control
+table recorded the checksum and the migration-created table accepted insert/select.
+
+Not yet done: mapepire backend (TCP/WebSocket, no db2util dependency);
+job-log diagnostics via `QSYS2.JOBLOG_INFO`; packaging a module's `migrations/`
+into the registry artifact so `install --deploy` can run them automatically
+(today `bindle migrate` runs them from the module source tree).

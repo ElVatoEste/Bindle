@@ -12,5 +12,9 @@
     "engine": "native",
     "src": "src/",
     "objects": ["GREET"]
+  },
+  "migrations": {
+    "dir": "migrations/",
+    "schema": "MODGREET"
   }
 }
