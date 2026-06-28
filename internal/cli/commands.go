@@ -12,11 +12,3 @@ func newAddCmd() *cobra.Command {
 		RunE:  notImplemented("add"),
 	}
 }
-
-func newBuildCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "build",
-		Short: "Compile module objects in dependency order",
-		RunE:  notImplemented("build"),
-	}
-}

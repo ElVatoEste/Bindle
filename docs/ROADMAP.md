@@ -33,11 +33,12 @@ Objetivo: instalar un módulo con dependencias, de extremo a extremo, en un IBM 
 - [x] `bindle fetch` + verificación por hash (dentro de `bindle install`).
 - [x] `bindle list` / `bindle list tree` (resuelve y muestra el grafo real).
 
-**Build (envolver Bob)**
-- [ ] `bindle build`: compila en orden de dependencia.
-- [ ] Generación de `*BNDDIR` desde el manifiesto.
-- [ ] Cálculo/registro de la **signature** del `*SRVPGM`.
-- [ ] Empaquetado a SAVF.
+**Build (CL directo, sin Bob)**
+- [x] `bindle build`: sube fuente (SFTP) → `setccsid 1252` → `CRTRPGMOD` → `CRTSRVPGM` → SAVF → descarga. Validado en vivo en pub400 (SAVF real 211200 B).
+- [x] Cálculo/registro de la **signature** del `*SRVPGM` (`DSPSRVPGM DETAIL(*SIGNATURE)`, parseado).
+- [x] Empaquetado a SAVF + `CPYTOSTMF` a IFS + download.
+- [ ] Generación de `*BNDDIR` desde el manifiesto (binder source pa signature estable).
+- [ ] Compilar en orden de dependencia (multi-módulo con deps).
 
 **Install end-to-end**
 - [x] `bindle install` (lado local): resolve → `bindle.lock` → fetch → verificación sha256 → cache.

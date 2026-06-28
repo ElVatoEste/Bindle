@@ -1,0 +1,16 @@
+{
+  "schema": "bindle/v0",
+  "name": "modgreet",
+  "version": "0.1.0",
+  "description": "Demo module: a greeting service program",
+  "library": "MODGREET",
+  "exports": {
+    "srvpgm": "HELLOSRV",
+    "copy": "HELLOPR"
+  },
+  "build": {
+    "engine": "native",
+    "src": "src/",
+    "objects": ["HELLOMOD"]
+  }
+}
